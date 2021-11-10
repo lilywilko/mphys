@@ -18,62 +18,53 @@ edges=[]
 for i in nodes:
     # for each node i, make two (3-1=2) new edges
     for j in range(1,3):
-        j=(i+j)%N   # use the modular function (% in python) to wrap around
+        j=(i+j)%N   # use the modular function (% in python) to wrap network around
         edges.append((i,j))   # add the edge to the list
-        
-#check to see what that loks like
-print(edges)
-print()
 
-# for contagion models its useful to store the network links as a dictionary
-# start with an empty dictionary
+# store the network links as a dictionary
 neighbours={}
-# each entry will be a list, one for every node, 
-for node in nodes:
-    # start with a dictionary of empty lists
-    neighbours[node]=[]
+for node in nodes:   # each entry will be a list, one for every node
+    neighbours[node]=[]   # start with a dictionary of empty lists
     
-# now add the network neighbours of each node
+# add the network neighbours of each node
 for i,j in edges:
-    # add j to i's neighbours 
-    neighbours[i].append(j)
-    # add i to j's neighbours
-    neighbours[j].append(i)
+    neighbours[i].append(j)   # add j to i's neighbours 
+    neighbours[j].append(i)   # add i to j's neighbours
 
 # check the results
-for node in neighbours: 
-    print(node,'is connected to',neighbours[node])
-print()
+#for node in neighbours: 
+    #print(node,'is connected to',neighbours[node])
+#print()
 
 ######################### 2. SIMULATE DISEASE SPREAD ############################
 
-# Define some parameters
-# beta is the proability that an infected node infectes a susceptible neighbour
-beta=0.5
-# start with a seed node
-seed=0
-# the generation times are drawn from a distribution
+# define some parameters
+beta=0.5   # the probability that an infected node infectes a susceptible neighbour
+seed=0   # start with a seed node (patient zero)
+
+# generation times are drawn from the log normal distribution defined below...
 mode=5 
-dispersion=1.3,
+dispersion=1.3
 sigma=np.log(dispersion)
 mu=(sigma**2)+np.log(mode)
 
-# we will keep a dictionarytelling us the status of each node
-# start with an empty dictionary
+# we will keep a dictionary telling us the immunity status of each node
 immune={}
-# for initial conditions we start with all of them susceptible
+
+# for initial conditions we start with all nodes susceptible
 for node in nodes:
     immune[node]=False
     
-# create a list of events. This list will grow and shrink over time
+# create a list of events. this list will grow and shrink over time
 events=[]
 
-# each event is a small dictionary with keys
+# each event is a small dictionary with keys...
+# type: the type of event which occurs
 # time: the time that the event occurs 
-# primary: the node that is infected
-# scondary: the node that 
+# primary: the node that is doing the infecting
+# secondary: the node that is being infected
 
-# the first event is the seeding event
+# define the first event (the seeding event)
 first_infection={'type':'trans',
             'time':0,
              'primary':None,
@@ -85,52 +76,32 @@ events.append(first_infection)
 # output is a tree-like network
 tree=[]
 
-# now we start a loop in which we resolve the events in time order
-# until there are no events remaining
+# start a loop in which we resolve the events in time order until no events remain
 while events:
+    event=min(events,key=lambda x: x['time'])   # fetch earliest infection event on the list
+    events.remove(event)   # remove the chosen infection from the list
     
-    # take the first event from the list 
-    # get earliest infection event on the list
-    event=min(events,key=lambda x: x['time'])
-    # remove the chosen infection from the list
-    events.remove(event)
-    
-    # in some cases the secondary might already be immune
-    # if that is the case we ignore this and go to the next step
+    # ignoring cases in which the secondary is already immune (so no infection occurs)...
     if not immune[event['secondary']]:
-        # print out the event:
-        print(str(event['primary'])+' infected '+str(event['secondary'])+' at t='+str(event['time']))
-        # add it to the tree
-        tree.append((event['primary'],event['secondary']))
-        # now we need to add more infections to the list
-        primary=event['secondary']
-        # make the primary immune so that no future events can affect them
-        immune[primary]=True
+        print(str(event['primary'])+' infected '+str(event['secondary'])+' at t = '+str(event['time']))   # print the event
+        tree.append((event['primary'],event['secondary']))   # add event to the tree
+
+        # now we need to add more infections to the list...
+        primary=event['secondary']   # "move on" so that the secondary becomes the new primary
+        immune[primary]=True   # make the primary immune so that no future events can affect that node
         
         # create new infection events to add to the list
-        for secondary in neighbours[primary]:
-            # does primary infect seconday?
-            if random.random()<beta and not immune[secondary]:
-                # how long will it be until primary infects secondary
-                generation_time=int((24*60*60)*np.random.lognormal(mu,sigma))
-                # so the time of the transmission will be...
-                transmission_time=event['time']+generation_time
+        for secondary in neighbours[primary]:   # for all neighbours of the primary...
+            if random.random()<beta and not immune[secondary]:   # determines if primary infects secondary
+                generation_time=int((24*60*60)*np.random.lognormal(mu,sigma))   # how long will it be (in seconds) until primary infects secondary?
+                transmission_time=event['time']+generation_time   # adds generation period to previous event time to give current event time
+
                 # create the event
-                new_event={'time':transmission_time,
-                           'primary':primary,
-                           'secondary':secondary}
-                # add it to the list
-                events.append(new_event) 
-        
+                new_event={'type':'trans'
+                        'time':transmission_time,
+                        'primary':primary,
+                        'secondary':secondary}
+                events.append(new_event) # add event to the list
         
 print() 
-print('outbreak size='+str(len(tree)))
-
-
- 
- 
-
-
-
-
-
+print('Outbreak size = '+str(len(tree)))
