@@ -1,31 +1,25 @@
 # 1. Make a network
+# 2. Simulate disease spread on the network
+# 3. Simulate gradual vaccine uptake 
 
-# 2. simulate disease spread on the network
-
-# 3. simulate gradual vaccine uptake 
+################################### IMPORTS #####################################
 
 import random
 import numpy as np
 
-# 1. Make network 
+############################### 1. MAKE NETWORK #################################
 
-# N nodes
+# define number of nodes and make a list of nodes
 N=100
-# start with a list of nodes
 nodes=list(range(N))
-# make a list of edges
-# nodes are connected to those that are close to them
 
-# start with an empty list of edges
+# make a list of edges (nodes are connected to those that are close to them)
 edges=[]
 for i in nodes:
-    # make a new edge
+    # for each node i, make two (3-1=2) new edges
     for j in range(1,3):
-        # choose j
-        #use the modular function (% in python) to wrap around
-        j=(i+j)%N
-        # add the edge to the list
-        edges.append((i,j))
+        j=(i+j)%N   # use the modular function (% in python) to wrap around
+        edges.append((i,j))   # add the edge to the list
         
 #check to see what that loks like
 print(edges)
@@ -51,7 +45,7 @@ for node in neighbours:
     print(node,'is connected to',neighbours[node])
 print()
 
-# 2. Simulate disease spread on te network
+######################### 2. SIMULATE DISEASE SPREAD ############################
 
 # Define some parameters
 # beta is the proability that an infected node infectes a susceptible neighbour
