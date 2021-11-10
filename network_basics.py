@@ -97,7 +97,7 @@ while events:
                 transmission_time=event['time']+generation_time   # adds generation period to previous event time to give current event time
 
                 # create the event
-                new_event={'type':'trans'
+                new_event={'type':'trans',
                         'time':transmission_time,
                         'primary':primary,
                         'secondary':secondary}
