@@ -6,6 +6,7 @@
 
 import random
 import numpy as np
+import matplotlib.pyplot as plt
 
 ############################### 1. MAKE NETWORK #################################
 
@@ -48,60 +49,74 @@ dispersion=1.3
 sigma=np.log(dispersion)
 mu=(sigma**2)+np.log(mode)
 
-# we will keep a dictionary telling us the immunity status of each node
-immune={}
+# create a list to store the sizes of X simulated outbreaks
+X = 100000
+outbreak_sizes=[]
 
-# for initial conditions we start with all nodes susceptible
-for node in nodes:
-    immune[node]=False
-    
-# create a list of events. this list will grow and shrink over time
-events=[]
+# run x simulations to collect outbreak sizes
+for i in range(1,X+1):
+    # we will keep a dictionary telling us the immunity status of each node
+    immune={}
 
-# each event is a small dictionary with keys...
-# type: the type of event which occurs
-# time: the time that the event occurs 
-# primary: the node that is doing the infecting
-# secondary: the node that is being infected
+    # for initial conditions we start with all nodes susceptible
+    for node in nodes:
+        immune[node]=False
 
-# define the first event (the seeding event)
-first_infection={'type':'trans',
-            'time':0,
-             'primary':None,
-             'secondary':seed}
+    # create a list of events. this list will grow and shrink over time
+    events=[]
 
-# add this to the list
-events.append(first_infection)
+    # each event is a small dictionary with keys...
+    # type: the type of event which occurs
+    # time: the time that the event occurs 
+    # primary: the node that is doing the infecting
+    # secondary: the node that is being infected
 
-# output is a tree-like network
-tree=[]
+    # define the first event (the seeding event)
+    first_infection={'type':'trans',
+                'time':0,
+                'primary':None,
+                'secondary':seed}
 
-# start a loop in which we resolve the events in time order until no events remain
-while events:
-    event=min(events,key=lambda x: x['time'])   # fetch earliest infection event on the list
-    events.remove(event)   # remove the chosen infection from the list
-    
-    # ignoring cases in which the secondary is already immune (so no infection occurs)...
-    if not immune[event['secondary']]:
-        print(str(event['primary'])+' infected '+str(event['secondary'])+' at t = '+str(event['time']))   # print the event
-        tree.append((event['primary'],event['secondary']))   # add event to the tree
+    # add this to the list
+    events.append(first_infection)
 
-        # now we need to add more infections to the list...
-        primary=event['secondary']   # "move on" so that the secondary becomes the new primary
-        immune[primary]=True   # make the primary immune so that no future events can affect that node
+    # output is a tree-like network
+    tree=[]
+
+    # start a loop in which we resolve the events in time order until no events remain
+    while events:
+        event=min(events,key=lambda x: x['time'])   # fetch earliest infection event on the list
+        events.remove(event)   # remove the chosen infection from the list
         
-        # create new infection events to add to the list
-        for secondary in neighbours[primary]:   # for all neighbours of the primary...
-            if random.random()<beta and not immune[secondary]:   # determines if primary infects secondary
-                generation_time=int((24*60*60)*np.random.lognormal(mu,sigma))   # how long will it be (in seconds) until primary infects secondary?
-                transmission_time=event['time']+generation_time   # adds generation period to previous event time to give current event time
+        # ignoring cases in which the secondary is already immune (so no infection occurs)...
+        if not immune[event['secondary']]:
+            #print(str(event['primary'])+' infected '+str(event['secondary'])+' at t = '+str(event['time']))   # print the event
+            tree.append((event['primary'],event['secondary']))   # add event to the tree
 
-                # create the event
-                new_event={'type':'trans',
-                        'time':transmission_time,
-                        'primary':primary,
-                        'secondary':secondary}
-                events.append(new_event) # add event to the list
-        
-print() 
-print('Outbreak size = '+str(len(tree)))
+            # now we need to add more infections to the list...
+            primary=event['secondary']   # "move on" so that the secondary becomes the new primary
+            immune[primary]=True   # make the primary immune so that no future events can affect that node
+            
+            # create new infection events to add to the list
+            for secondary in neighbours[primary]:   # for all neighbours of the primary...
+                if random.random()<beta and not immune[secondary]:   # determines if primary infects secondary
+                    generation_time=int((24*60*60)*np.random.lognormal(mu,sigma))   # how long will it be (in seconds) until primary infects secondary?
+                    transmission_time=event['time']+generation_time   # adds generation period to previous event time to give current event time
+
+                    # create the event
+                    new_event={'type':'trans',
+                            'time':transmission_time,
+                            'primary':primary,
+                            'secondary':secondary}
+                    events.append(new_event) # add event to the list
+            
+    print("Outbreak "+str(i)+" size = "+str(len(tree)))
+    outbreak_sizes.append(len(tree))   # append outbreak size to list for plotting later
+
+# plot histogram of outbreak sizes
+bin_edges = np.arange(0.5, max(outbreak_sizes)+0.5, 1)   # creates array of histogram bin edges ±0.5 of each integer outbreak size
+plt.hist(outbreak_sizes, bins=bin_edges)   # draws histogram of outbreak sizes
+plt.xlabel("Outbreak size")
+plt.ylabel("Frequency")
+plt.title("Distribution of outbreak sizes for "+str(X)+" simulated outbreaks")
+plt.show()
