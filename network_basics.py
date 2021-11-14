@@ -86,7 +86,7 @@ def main():
     outbreak_sizes=[]
     outbreak_vaxxed=[]
 
-    # run simulation twice through (once without vaccination, and once with vaccination)
+    # run simulation twice through (once with vaccination, then once without vaccination)
     for i in range(2):
         # run X simulations to collect outbreak sizes
         for j in range(1,X+1):
