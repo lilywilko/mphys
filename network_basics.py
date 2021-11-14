@@ -8,19 +8,26 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 
+################################### AUXILIARY FUNCTIONS ###################################
+
+# function to make a dictionary for any event type
 def Event(type, time, primary, secondary):
+    # if the event is a transmission...
     if type=='trans':
         event={'type':type,
                 'time':time,
-                'primary':primary,
-                'secondary':secondary}
+                'primary':primary,   # primary is the node that does the infecting
+                'secondary':secondary}   # secondary is the node that is infected
+
+    # if the event is a vaccination or 'unvax' (vaccination wearing off)...
     else:
         event={'type':type,
                 'time':time,
-                'node':primary}
+                'node':primary}   # primary is used to indicate the node (secondary will be passed as None)
 
     return event
 
+# function to plot the distribution of outbreak sizes
 def PlotOutbreakSize(values):
     bin_edges = np.arange(0.5, max(values)+0.5, 1)   # creates array of histogram bin edges ±0.5 of each integer outbreak size
     plt.hist(values, bins=bin_edges, label='N=100 nodes')   # draws histogram of outbreak sizes
@@ -122,26 +129,27 @@ def main():
                         if random.random()<beta and not immune[secondary]:   # determines if primary infects secondary
                             generation_time=int((24*60*60)*np.random.lognormal(g_mu,g_sigma))   # how long will it be (in seconds) until primary infects secondary?
                             transmission_time=event['time']+generation_time   # adds generation period to previous event time to give current event time
+                            events.append(Event('trans', transmission_time, primary, secondary))   # creates the transmission event and adds to list
 
-                            # create the event
-                            events.append(Event('trans', transmission_time, primary, secondary))
+                    # picking a node to vaccinate....
+                    pick_index = np.random.randint(0, len(nodes[immune==False]))   # picks a random non-immune node
+                    pick = nodes[immune==False][pick_index]
+                    immune[pick]=True   # makes the random node immune
+                    events.append(Event('vax', transmission_time, pick, None))   # creates a vax event and adds to the list
+                    #print(pick,"got vaccinated!")
 
-                    if len(nodes[immune==False])>0:
-                        pick_index = np.random.randint(0, len(nodes[immune==False]))
-                        pick = nodes[immune==False][pick_index]
-                        immune[pick]=True
-                        events.append(Event('vax', transmission_time, pick, None))
-                        #print(pick,"got vaccinated!")
-
+            # if the earliest remaining event is a vaccination...
             elif event['type']=='vax':
-                effective_time=int((24*60*60)*np.random.lognormal(v_mu,v_sigma))
-                end_time=event['time']+effective_time
-                immune[event['node']]=False
+                effective_time=int((24*60*60)*np.random.lognormal(v_mu,v_sigma))   # how long will the vaccine be effective for (in seconds)?
+                end_time=event['time']+effective_time   # adds effective period to vaccination time to give current event time
+                immune[event['node']]=False   # node is no longer immune
+                events.append(Event('unvax', end_time, event['node'], None))   # creates 'unvax' event and adds to list
+
                 #print(event['node'],"become susceptible again!")
-                events.append(Event('unvax', end_time, event['node'], None))
                 
         print("Outbreak "+str(i)+" size = "+str(len(tree)))
         outbreak_sizes.append(len(tree))   # append outbreak size to list for plotting later
-    PlotOutbreakSize(outbreak_sizes)
+
+    PlotOutbreakSize(outbreak_sizes)   # plots and shows the distribution of outbreak sizes
 
 main()
