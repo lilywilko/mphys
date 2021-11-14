@@ -132,7 +132,7 @@ def main():
                                 transmission_time=event['time']+generation_time   # adds generation period to previous event time to give current event time
                                 events.append(Event('trans', transmission_time, primary, secondary))   # creates the transmission event and adds to list
 
-                        # on second runthrough, include vaccination
+                        # on first runthrough, include vaccination
                         if i==0:
                             # picking a node to vaccinate....
                             pick_index = np.random.randint(0, len(nodes[immune==False]))   # picks a random non-immune node
