@@ -19,7 +19,7 @@ def Event(type, time, primary, secondary):
                 'primary':primary,   # primary is the node that does the infecting
                 'secondary':secondary}   # secondary is the node that is infected
 
-    # if the event is a vaccination or 'unvax' (vaccination wearing off)...
+    # if the event is a vaccination, 'unvax' (vaccination wearing off) or "resusceptible" (post-covid immunity wearing off)...
     else:
         event={'type':type,
                 'time':time,
@@ -74,6 +74,12 @@ def main():
     g_sigma=np.log(g_dispersion)
     g_mu=(g_sigma**2)+np.log(g_mode)
 
+    # post-covid immunity times are drawn from the log normal distribution defined below
+    #c_mode=5 
+    #c_dispersion=1.3
+    #c_sigma=np.log(c_dispersion)
+    #c_mu=(c_sigma**2)+np.log(c_mode)
+
     # vaccination effectiveness times are drawn from the log normal distribution defined below
     v_mode=5 
     v_dispersion=1.3
@@ -82,7 +88,7 @@ def main():
 
     ################################## SIMULATE OUTBREAK ##################################
     # create a list to store the sizes of X simulated outbreaks
-    X = 100000
+    X = 1
     outbreak_sizes=[]
     outbreak_vaxxed=[]
 
@@ -118,7 +124,7 @@ def main():
                 if event['type']=='trans':
                     # ignoring cases in which the secondary is already immune (so no infection occurs)...
                     if not immune[event['secondary']]:
-                        #print(str(event['primary'])+' infected '+str(event['secondary'])+' at t = '+str(event['time']))   # print the event
+                        print(str(event['primary'])+' infected '+str(event['secondary'])+' at t = '+str(event['time']))   # print the event
                         tree.append((event['primary'],event['secondary']))   # add event to the tree
 
                         # now we need to add more infections to the list...
@@ -132,6 +138,10 @@ def main():
                                 transmission_time=event['time']+generation_time   # adds generation period to previous event time to give current event time
                                 events.append(Event('trans', transmission_time, primary, secondary))   # creates the transmission event and adds to list
 
+                                #immunity_time=int((24*60*60)*np.random.lognormal(c_mu,c_sigma))
+                                #resusceptible_time=event['time']+immunity_time
+                                #events.append(Event('resusceptible', resusceptible_time, secondary, None))
+
                         # on first runthrough, include vaccination
                         if i==0:
                             # picking a node to vaccinate....
@@ -139,7 +149,7 @@ def main():
                             pick = nodes[immune==False][pick_index]
                             immune[pick]=True   # makes the random node immune
                             events.append(Event('vax', transmission_time, pick, None))   # creates a vax event and adds to the list
-                            #print(pick,"got vaccinated!")
+                            print(pick,"got vaccinated!")
 
                 # if the earliest remaining event is a vaccination...
                 elif event['type']=='vax':
@@ -147,7 +157,11 @@ def main():
                     end_time=event['time']+effective_time   # adds effective period to vaccination time to give current event time
                     immune[event['node']]=False   # node is no longer immune
                     events.append(Event('unvax', end_time, event['node'], None))   # creates 'unvax' event and adds to list
-                    #print(event['node'],"become susceptible again!")
+                    print(event['node'],"become re-susceptible after vaccination!")
+
+                #elif event['type']=='resusceptible':
+                    #immune[event['node']]=False
+                    #print(event['node'], "became re-susceptible after infection!")
                     
             print("Outbreak "+str(j)+" size = "+str(len(tree)))
             
