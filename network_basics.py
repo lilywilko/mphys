@@ -87,7 +87,7 @@ def main():
     v_mu=(v_sigma**2)+np.log(v_mode)
 
     # choose how many random cells will be vaccinated
-    vax_events = 0.1*N
+    vax_events = 0.05*N
 
     ################################## SIMULATE OUTBREAK ##################################
     # create a list to store the sizes of X simulated outbreaks
