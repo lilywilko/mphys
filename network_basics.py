@@ -86,6 +86,9 @@ def main():
     v_sigma=np.log(v_dispersion)
     v_mu=(v_sigma**2)+np.log(v_mode)
 
+    # choose how many random cells will be vaccinated
+    vax_events = 5
+
     ################################## SIMULATE OUTBREAK ##################################
     # create a list to store the sizes of X simulated outbreaks
     X = 1
@@ -95,6 +98,7 @@ def main():
     # run simulation twice through (once with vaccination, then once without vaccination)
     for i in range(2):
         # run X simulations to collect outbreak sizes
+                        
         for j in range(1,X+1):
             # we will keep an array telling us the immunity status of each node
             # for initial conditions we start with all nodes susceptible (all values false)
@@ -112,6 +116,18 @@ def main():
             # create the first event (the seeding event) and add to events list
             events.append(Event('trans', 0, None, seed))
 
+            # including vaccination on the first runthrough only...
+            if i==0:
+                print("--- VACCINATION LIST ---")
+            # picking a node to vaccinate....
+                for x in range(vax_events):
+                   pick = np.random.randint(1, N)   # picks a random non-immune node
+                   vax_time = np.random.randint(0,10000000)
+                   events.append(Event('vax', vax_time, pick, None))   # creates a vax event and adds to the list
+                   print(pick, "will be vaccinated at", vax_time)
+
+            print("------------------------")
+            
             # output is a tree-like network
             tree=[]
 
@@ -142,22 +158,17 @@ def main():
                                 #resusceptible_time=event['time']+immunity_time
                                 #events.append(Event('resusceptible', resusceptible_time, secondary, None))
 
-                        # on first runthrough, include vaccination
-                        if i==0:
-                            # picking a node to vaccinate....
-                            pick_index = np.random.randint(0, len(nodes[immune==False]))   # picks a random non-immune node
-                            pick = nodes[immune==False][pick_index]
-                            immune[pick]=True   # makes the random node immune
-                            events.append(Event('vax', transmission_time, pick, None))   # creates a vax event and adds to the list
-                            print(pick,"got vaccinated!")
-
                 # if the earliest remaining event is a vaccination...
                 elif event['type']=='vax':
+                    immune[event['node']]=True   # makes the vaxxed node immune
                     effective_time=int((24*60*60)*np.random.lognormal(v_mu,v_sigma))   # how long will the vaccine be effective for (in seconds)?
                     end_time=event['time']+effective_time   # adds effective period to vaccination time to give current event time
-                    immune[event['node']]=False   # node is no longer immune
                     events.append(Event('unvax', end_time, event['node'], None))   # creates 'unvax' event and adds to list
-                    print(event['node'],"become re-susceptible after vaccination!")
+                    print(event['node'],"got vaccinated!")
+
+                elif event['type']=='unvax':
+                    immune[event['node']]=False   # node is no longer immune
+                    print(event['node'], "became re-susceptible after vaccination!")
 
                 #elif event['type']=='resusceptible':
                     #immune[event['node']]=False
