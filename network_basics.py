@@ -127,7 +127,11 @@ def main():
                    print(pick, "will be vaccinated at", vax_time)
 
             print("------------------------")
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 24850977be4759773e1434228d280d896be323c7
             # output is a tree-like network
             tree=[]
 
