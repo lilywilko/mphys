@@ -40,6 +40,16 @@ def NewEventTime(time, mu, sigma):
     wait=int((24*60*60)*np.random.lognormal(mu,sigma))   # how long will it be (in seconds) until the next event?
     return time+wait
 
+def ConvertTime(time):
+    day = time // (24 * 3600)
+    time = time % (24 * 3600)
+    hour = time // 3600
+    time %= 3600
+    minutes = time // 60
+    time %= 60
+    seconds = time
+    return str(day)+" days, "+str(hour)+" hours, "+str(minutes)+" minutes, and "+str(seconds)+" seconds"
+
 def main():
     #################################### MAKE NETWORK #####################################
     # define number of nodes and make an array of nodes
@@ -73,19 +83,19 @@ def main():
     beta=0.5   # the probability that an infected node infectes a susceptible neighbour
     seed=0   # start with a seed node (patient zero)
 
-    # generation times are drawn from the log normal distribution defined below...
+    # generation times (in days) are drawn from the log normal distribution defined below...
     g_mode=5 
     g_dispersion=1.3
     g_sigma=np.log(g_dispersion)
     g_mu=(g_sigma**2)+np.log(g_mode)
 
-    # post-covid immunity times are drawn from the log normal distribution defined below
+    # post-covid immunity times (in days) are drawn from the log normal distribution defined below
     c_mode=10 
     c_dispersion=3
     c_sigma=np.log(c_dispersion)
     c_mu=(c_sigma**2)+np.log(c_mode)
 
-    # vaccination effectiveness times are drawn from the log normal distribution defined below
+    # vaccination effectiveness times (in days) are drawn from the log normal distribution defined below
     v_mode=10
     v_dispersion=3
     v_sigma=np.log(v_dispersion)
@@ -127,9 +137,9 @@ def main():
             # picking a node to vaccinate....
                 for x in range(vax_events):
                    pick = np.random.randint(1, N)   # picks a random non-immune node
-                   vax_time = np.random.randint(0,10000000)
+                   vax_time = np.random.randint(0,31536000)   # picks a random second within the first year to vaccinate
                    events.append(Event('vax', vax_time, pick, None))   # creates a vax event and adds to the list
-                   print(pick, "will be vaccinated at", vax_time)
+                   print(pick, "will be vaccinated at", ConvertTime(vax_time))
 
             print("-------------------------------------------")
             
@@ -145,7 +155,7 @@ def main():
                 if event['type']=='trans':
                     # ignoring cases in which the secondary is already immune (so no infection occurs)...
                     if not immune[event['secondary']]:
-                        print(str(event['primary'])+' infected '+str(event['secondary'])+' at t = '+str(event['time']))   # print the event
+                        print(str(event['primary'])+' infected '+str(event['secondary'])+' at '+ConvertTime(event['time']))   # print the event
                         tree.append((event['primary'],event['secondary']))   # add event to the tree
 
                         # now we need to add more infections to the list...
@@ -164,17 +174,18 @@ def main():
                 # if the earliest remaining event is a vaccination...
                 elif event['type']=='vax':
                     immune[event['node']]=True   # makes the vaxxed node immune
+                    print(event['node'],"got vaccinated at",ConvertTime(event['time']))
+
                     end_time = NewEventTime(event['time'], v_mu, v_sigma)
                     events.append(Event('unvax', end_time, event['node'], None))   # creates 'unvax' event and adds to list
-                    print(event['node'],"got vaccinated!")
 
                 elif event['type']=='unvax':
                     immune[event['node']]=False   # node is no longer immune
-                    print(event['node'], "became re-susceptible after vaccination!")
+                    print(event['node'], "became re-susceptible after vaccination at", ConvertTime(event['time']))
 
                 elif event['type']=='resusceptible':
                     immune[event['node']]=False
-                    print(event['node'], "became re-susceptible after infection!")
+                    print(event['node'], "became re-susceptible after infection at", ConvertTime(event['time']))
 
             infected = []
             for x in range(len(tree)):
