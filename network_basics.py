@@ -35,6 +35,11 @@ def PlotOutbreakSize(values, status, n):
     plt.ylabel("Frequency")
     plt.title("Distribution of outbreak sizes for "+str(len(values))+" simulated outbreaks \n on a network of "+str(n)+" nodes")
 
+# function to return the next event time
+def NewEventTime(time, mu, sigma):
+    wait=int((24*60*60)*np.random.lognormal(mu,sigma))   # how long will it be (in seconds) until the next event?
+    return time+wait
+
 def main():
     #################################### MAKE NETWORK #####################################
     # define number of nodes and make an array of nodes
@@ -150,19 +155,16 @@ def main():
                         # create new infection events to add to the list
                         for secondary in neighbours[primary]:   # for all neighbours of the primary...
                             if random.random()<beta and not immune[secondary]:   # determines if primary infects secondary
-                                generation_time=int((24*60*60)*np.random.lognormal(g_mu,g_sigma))   # how long will it be (in seconds) until primary infects secondary?
-                                transmission_time=event['time']+generation_time   # adds generation period to previous event time to give current event time
+                                transmission_time = NewEventTime(event['time'], g_mu, g_sigma)   # when will the primary infect the secondary?
                                 events.append(Event('trans', transmission_time, primary, secondary))   # creates the transmission event and adds to list
 
-                                immunity_time=int((24*60*60)*np.random.lognormal(c_mu,c_sigma))
-                                resusceptible_time=transmission_time+immunity_time
+                                resusceptible_time = NewEventTime(transmission_time, c_mu, c_sigma)
                                 events.append(Event('resusceptible', resusceptible_time, secondary, None))
 
                 # if the earliest remaining event is a vaccination...
                 elif event['type']=='vax':
                     immune[event['node']]=True   # makes the vaxxed node immune
-                    effective_time=int((24*60*60)*np.random.lognormal(v_mu,v_sigma))   # how long will the vaccine be effective for (in seconds)?
-                    end_time=event['time']+effective_time   # adds effective period to vaccination time to give current event time
+                    end_time = NewEventTime(event['time'], v_mu, v_sigma)
                     events.append(Event('unvax', end_time, event['node'], None))   # creates 'unvax' event and adds to list
                     print(event['node'],"got vaccinated!")
 
