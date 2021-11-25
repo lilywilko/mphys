@@ -75,14 +75,14 @@ def main():
     g_mu=(g_sigma**2)+np.log(g_mode)
 
     # post-covid immunity times are drawn from the log normal distribution defined below
-    #c_mode=5 
-    #c_dispersion=1.3
-    #c_sigma=np.log(c_dispersion)
-    #c_mu=(c_sigma**2)+np.log(c_mode)
+    c_mode=10 
+    c_dispersion=3
+    c_sigma=np.log(c_dispersion)
+    c_mu=(c_sigma**2)+np.log(c_mode)
 
     # vaccination effectiveness times are drawn from the log normal distribution defined below
-    v_mode=5 
-    v_dispersion=1.3
+    v_mode=10
+    v_dispersion=3
     v_sigma=np.log(v_dispersion)
     v_mu=(v_sigma**2)+np.log(v_mode)
 
@@ -126,7 +126,7 @@ def main():
                    events.append(Event('vax', vax_time, pick, None))   # creates a vax event and adds to the list
                    print(pick, "will be vaccinated at", vax_time)
 
-            print("------------------------")
+            print("-------------------------------------------")
             
             # output is a tree-like network
             tree=[]
@@ -154,9 +154,9 @@ def main():
                                 transmission_time=event['time']+generation_time   # adds generation period to previous event time to give current event time
                                 events.append(Event('trans', transmission_time, primary, secondary))   # creates the transmission event and adds to list
 
-                                #immunity_time=int((24*60*60)*np.random.lognormal(c_mu,c_sigma))
-                                #resusceptible_time=event['time']+immunity_time
-                                #events.append(Event('resusceptible', resusceptible_time, secondary, None))
+                                immunity_time=int((24*60*60)*np.random.lognormal(c_mu,c_sigma))
+                                resusceptible_time=transmission_time+immunity_time
+                                events.append(Event('resusceptible', resusceptible_time, secondary, None))
 
                 # if the earliest remaining event is a vaccination...
                 elif event['type']=='vax':
@@ -170,20 +170,33 @@ def main():
                     immune[event['node']]=False   # node is no longer immune
                     print(event['node'], "became re-susceptible after vaccination!")
 
-                #elif event['type']=='resusceptible':
-                    #immune[event['node']]=False
-                    #print(event['node'], "became re-susceptible after infection!")
-                    
-            print("Outbreak "+str(j)+" size = "+str(len(tree)))
+                elif event['type']=='resusceptible':
+                    immune[event['node']]=False
+                    print(event['node'], "became re-susceptible after infection!")
+
+            infected = []
+            for x in range(len(tree)):
+                infected.append(tree[x][1])
+
+            if i==0:
+                str_out=""
+
+            else:
+                str_out="OUT"
+
+            print("--- OUTBREAK "+str(i+1)+" (WITH"+str_out+" VACCINATION) STATS ---")
+
+            print("Number of infections: "+str(len(tree)))
+            print("Number of nodes infected: "+str(len(set(infected))))
             
             if i==0:
                 outbreak_vaxxed.append(len(tree))   # append no-vax outbreak size to list for plotting later
             else:
                 outbreak_sizes.append(len(tree))   # append vaxxed outbreak size to list for plotting later
 
-    PlotOutbreakSize(outbreak_sizes, 'No vaccinations', N)   # plots and shows the distribution of outbreak sizes
-    PlotOutbreakSize(outbreak_vaxxed, 'One vax event per infection event', N)   # plots and shows the distribution of outbreak sizes
-    plt.legend()
-    plt.show()
+    #PlotOutbreakSize(outbreak_sizes, 'No vaccinations', N)   # plots and shows the distribution of outbreak sizes
+    #PlotOutbreakSize(outbreak_vaxxed, 'One vax event per infection event', N)   # plots and shows the distribution of outbreak sizes
+    #plt.legend()
+    #plt.show()
 
 main()
