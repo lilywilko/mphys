@@ -104,11 +104,17 @@ def LinkRings(nbrs1, nbrs2, n):
 
 def main():
     #################################### MAKE NETWORK #####################################
+    
     # define number of nodes and make an array of nodes
     N1 = 100
     N2 = 100
-    N3 = 50
+    N3 = 100
     totalN = N1+N2+N3
+
+    # define how many links are made between rings
+    link1to2 = 30
+    link2to3 = 30
+    link1to3 = 30
 
     # create the three (currently unattached) rings of nodes
     nodes1, edges1, neighbours1 = CreateRing(0, N1)
@@ -121,9 +127,9 @@ def main():
     neighbours3 = AddSmallWorld(neighbours3)
 
     # link the three rings
-    neighbours1, neighbours2 = LinkRings(neighbours1, neighbours2, 30)
-    neighbours2, neighbours3 = LinkRings(neighbours2, neighbours3, 30)
-    neighbours1, neighbours3 = LinkRings(neighbours1, neighbours3, 30)
+    neighbours1, neighbours2 = LinkRings(neighbours1, neighbours2, link1to2)
+    neighbours2, neighbours3 = LinkRings(neighbours2, neighbours3, link2to3)
+    neighbours1, neighbours3 = LinkRings(neighbours1, neighbours3, link1to3)
 
     # merge individual rings' information into definitive lists
     nodes = np.ndarray.tolist(nodes1) + np.ndarray.tolist(nodes2) + np.ndarray.tolist(nodes2)
