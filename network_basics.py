@@ -217,7 +217,7 @@ def main():
                 if event['type']=='trans':
                     # ignoring cases in which the secondary is already immune (so no infection occurs)...
                     if not immune[event['secondary']]:
-                        print(str(event['primary'])+' infected '+str(event['secondary'])+' at '+ConvertTime(event['time']))   # print the event
+                        #print(str(event['primary'])+' infected '+str(event['secondary'])+' at '+ConvertTime(event['time']))   # print the event
                         tree.append((event['primary'],event['secondary']))   # add event to the tree
 
                         # now we need to add more infections to the list...
@@ -233,21 +233,25 @@ def main():
                                 resusceptible_time = NewEventTime(transmission_time, c_mu, c_sigma)
                                 events.append(Event('resusceptible', resusceptible_time, secondary, None))
 
+                    # if there are no more transmission events in the events list...
+                    if len(list(filter(lambda e: e['type'] == 'trans', events)))==0:
+                        lastinfection = event['time']   # store the time of the final transmission
+
                 # if the earliest remaining event is a vaccination...
                 elif event['type']=='vax':
                     immune[event['node']]=True   # makes the vaxxed node immune
-                    print(event['node'],"got vaccinated at",ConvertTime(event['time']))
+                    #print(event['node'],"got vaccinated at",ConvertTime(event['time']))
 
                     end_time = NewEventTime(event['time'], v_mu, v_sigma)
                     events.append(Event('unvax', end_time, event['node'], None))   # creates 'unvax' event and adds to list
 
                 elif event['type']=='unvax':
                     immune[event['node']]=False   # node is no longer immune
-                    print(event['node'], "became re-susceptible after vaccination at", ConvertTime(event['time']))
+                    #print(event['node'], "became re-susceptible after vaccination at", ConvertTime(event['time']))
 
                 elif event['type']=='resusceptible':
                     immune[event['node']]=False
-                    print(event['node'], "became re-susceptible after infection at", ConvertTime(event['time']))
+                    #print(event['node'], "became re-susceptible after infection at", ConvertTime(event['time']))
 
             infected = []
             for x in range(len(tree)):
@@ -263,6 +267,7 @@ def main():
 
             print("Number of infections: "+str(len(tree)))
             print("Number of nodes infected: "+str(len(set(infected))))
+            print("Last infection occurred at", ConvertTime(lastinfection))
             
             if i==0:
                 outbreak_vaxxed.append(len(tree))   # append no-vax outbreak size to list for plotting later
