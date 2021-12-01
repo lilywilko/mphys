@@ -50,29 +50,47 @@ def ConvertTime(time):
     seconds = time
     return str(day)+" days, "+str(hour)+" hours, "+str(minutes)+" minutes, and "+str(seconds)+" seconds"
 
-def main():
-    #################################### MAKE NETWORK #####################################
-    # define number of nodes and make an array of nodes
-    N=100
-    nodes=np.arange(0,N,1)
-
+def CreateRing(start, N):
+    nodes=np.arange(start,N,1)
     # make a list of edges (nodes are connected to those that are close to them)
     edges=[]
     for i in nodes:
         # for each node i, make two (3-1=2) new edges
         for j in range(1,3):
-            j=(i+j)%N   # use the modular function (% in python) to wrap network around
+            j=((i+j)%N)   # use the modular function (% in python) to wrap network around
+            if j==0 or j==1:
+                if start!=0:
+                    j=j+start
             edges.append((i,j))   # add the edge to the list
 
-    # store the network links as a dictionary
     neighbours={}
-    for node in nodes:   # each entry will be a list, one for every node
-        neighbours[node]=[]   # start with a dictionary of empty lists
-        
+    for node in nodes:
+        neighbours[node]=[]
+
     # add the network neighbours of each node
     for i,j in edges:
         neighbours[i].append(j)   # add j to i's neighbours 
         neighbours[j].append(i)   # add i to j's neighbours
+
+    return nodes, edges, neighbours
+
+
+def main():
+    #################################### MAKE NETWORK #####################################
+    # define number of nodes and make an array of nodes
+    N1 = 100
+    N2 = 100
+    N3 = 50
+    totalN = N1+N2+N3
+
+    nodes1, edges1, neighbours1 = CreateRing(0, N1)
+    nodes2, edges2, neighbours2 = CreateRing(N1, N1+N2)
+    nodes3, edges3, neighbours3 = CreateRing(N1+N2, totalN)
+
+    # merge individual rings' information into definitive lists
+    nodes = np.ndarray.tolist(nodes1) + np.ndarray.tolist(nodes2) + np.ndarray.tolist(nodes2)
+    edges = edges1 + edges2 + edges3
+    neighbours = neighbours1 | neighbours2 | neighbours3
 
     # check the results
     #for node in neighbours: 
@@ -117,7 +135,7 @@ def main():
         for j in range(1,X+1):
             # we will keep an array telling us the immunity status of each node
             # for initial conditions we start with all nodes susceptible (all values false)
-            immune=np.zeros(N, dtype=bool)
+            immune=np.zeros(totalN, dtype=bool)
 
             # create a list of events. this list will grow and shrink over time
             events=[]
@@ -136,7 +154,7 @@ def main():
                 print("--- VACCINATION LIST ---")
             # picking a node to vaccinate....
                 for x in range(vax_events):
-                   pick = np.random.randint(1, N)   # picks a random non-immune node
+                   pick = np.random.randint(1, totalN)   # picks a random non-immune node
                    vax_time = np.random.randint(0,31536000)   # picks a random second within the first year to vaccinate
                    events.append(Event('vax', vax_time, pick, None))   # creates a vax event and adds to the list
                    print(pick, "will be vaccinated at", ConvertTime(vax_time))
