@@ -27,6 +27,7 @@ def Event(type, time, primary, secondary):
 
     return event
 
+
 # function to plot the distribution of outbreak sizes
 def PlotOutbreakSize(values, status, n):
     bin_edges = np.arange(0.5, max(values)+0.5, 1)   # creates array of histogram bin edges ±0.5 of each integer outbreak size
@@ -35,10 +36,12 @@ def PlotOutbreakSize(values, status, n):
     plt.ylabel("Frequency")
     plt.title("Distribution of outbreak sizes for "+str(len(values))+" simulated outbreaks \n on a network of "+str(n)+" nodes")
 
+
 # function to return the next event time
 def NewEventTime(time, mu, sigma):
     wait=int((24*60*60)*np.random.lognormal(mu,sigma))   # how long will it be (in seconds) until the next event?
     return time+wait
+
 
 def ConvertTime(time):
     day = time // (24 * 3600)
@@ -49,6 +52,7 @@ def ConvertTime(time):
     time %= 60
     seconds = time
     return str(day)+" days, "+str(hour)+" hours, "+str(minutes)+" minutes, and "+str(seconds)+" seconds"
+
 
 def CreateRing(start, N):
     nodes=np.arange(start,N,1)
@@ -75,6 +79,29 @@ def CreateRing(start, N):
     return nodes, edges, neighbours
 
 
+def AddSmallWorld(neighbours):
+    keys = list(neighbours.keys())   # fetches a list of the nodes from the neighbours dictionary
+    pick1, pick2 = random.choices(keys, k=2)   # chooses two nodes at random
+
+    # adds small world links to the list of neighbours
+    neighbours[pick1].append(pick2)
+    neighbours[pick2].append(pick1)
+
+    return neighbours
+
+
+def LinkRings(nbrs1, nbrs2, n):
+    for i in range(n):
+        node1 = random.choice(list(nbrs1.keys()))
+        node2 = random.choice(list(nbrs2.keys()))
+
+        # adds small world links to the list of neighbours
+        nbrs1[node1].append(node2)
+        nbrs2[node2].append(node1)
+
+    return nbrs1, nbrs2
+
+
 def main():
     #################################### MAKE NETWORK #####################################
     # define number of nodes and make an array of nodes
@@ -83,9 +110,20 @@ def main():
     N3 = 50
     totalN = N1+N2+N3
 
+    # create the three (currently unattached) rings of nodes
     nodes1, edges1, neighbours1 = CreateRing(0, N1)
     nodes2, edges2, neighbours2 = CreateRing(N1, N1+N2)
     nodes3, edges3, neighbours3 = CreateRing(N1+N2, totalN)
+
+    # add one small world link to each ring
+    neighbours1 = AddSmallWorld(neighbours1)
+    neighbours2 = AddSmallWorld(neighbours2)
+    neighbours3 = AddSmallWorld(neighbours3)
+
+    # link the three rings
+    neighbours1, neighbours2 = LinkRings(neighbours1, neighbours2, 30)
+    neighbours2, neighbours3 = LinkRings(neighbours2, neighbours3, 30)
+    neighbours1, neighbours3 = LinkRings(neighbours1, neighbours3, 30)
 
     # merge individual rings' information into definitive lists
     nodes = np.ndarray.tolist(nodes1) + np.ndarray.tolist(nodes2) + np.ndarray.tolist(nodes2)
@@ -108,19 +146,19 @@ def main():
     g_mu=(g_sigma**2)+np.log(g_mode)
 
     # post-covid immunity times (in days) are drawn from the log normal distribution defined below
-    c_mode=10 
-    c_dispersion=3
+    c_mode=90 
+    c_dispersion=10
     c_sigma=np.log(c_dispersion)
     c_mu=(c_sigma**2)+np.log(c_mode)
 
     # vaccination effectiveness times (in days) are drawn from the log normal distribution defined below
-    v_mode=10
-    v_dispersion=3
+    v_mode=180
+    v_dispersion=10
     v_sigma=np.log(v_dispersion)
     v_mu=(v_sigma**2)+np.log(v_mode)
 
     # choose how many random cells will be vaccinated
-    vax_events = 5
+    vax_events = 20
 
     ################################## SIMULATE OUTBREAK ##################################
     # create a list to store the sizes of X simulated outbreaks
