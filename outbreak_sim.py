@@ -1,0 +1,273 @@
+# 1. Make a network
+# 2. Simulate disease spread on the network
+# 3. Simulate gradual vaccine uptake 
+
+######################################### IMPORTS #########################################
+
+import random
+import numpy as np
+import matplotlib.pyplot as plt
+
+################################### AUXILIARY FUNCTIONS ###################################
+
+# function to make a dictionary for any event type
+def Event(type, time, primary, secondary):
+    # if the event is a transmission...
+    if type=='trans':
+        event={'type':type,
+                'time':time,
+                'primary':primary,   # primary is the node that does the infecting
+                'secondary':secondary}   # secondary is the node that is infected
+
+    # if the event is a vaccination, 'unvax' (vaccination wearing off) or "resusceptible" (post-covid immunity wearing off)...
+    else:
+        event={'type':type,
+                'time':time,
+                'node':primary}   # primary is used to indicate the node (secondary will be passed as None)
+
+    return event
+
+
+# function to plot the distribution of outbreak sizes
+def PlotOutbreakSize(values, i, n):
+    colours = ['maroon', 'red', 'darkorange', 'gold', 'limegreen', 'turquoise', 'deepskyblue', 'darkblue', 'indigo', 'darkviolet', 'violet']
+    #bin_edges = np.arange(0.5, max(values)+0.5, 1)   # creates array of histogram bin edges ±0.5 of each integer outbreak size
+    plt.hist(values, bins=40, label=str(i*10)+"% vax", histtype='step', color=colours[i])   # draws histogram of outbreak sizes
+    plt.xlabel("Outbreak size")
+    plt.ylabel("Frequency")
+    plt.title("Distribution of outbreak sizes for "+str(len(values))+" simulated outbreaks \n on a network of "+str(n)+" nodes")
+
+
+# function to return the next event time
+def NewEventTime(time, mu, sigma):
+    wait=int((24*60*60)*np.random.lognormal(mu,sigma))   # how long will it be (in seconds) until the next event?
+    return time+wait
+
+
+def ConvertTime(time):
+    day = time // (24 * 3600)
+    time = time % (24 * 3600)
+    hour = time // 3600
+    time %= 3600
+    minutes = time // 60
+    time %= 60
+    seconds = time
+    return str(day)+" days, "+str(hour)+" hours, "+str(minutes)+" minutes, and "+str(seconds)+" seconds"
+
+
+def CreateRing(start, N):
+    nodes=np.arange(start,N,1)
+    # make a list of edges (nodes are connected to those that are close to them)
+    edges=[]
+    for i in nodes:
+        # for each node i, make two (3-1=2) new edges
+        for j in range(1,3):
+            j=((i+j)%N)   # use the modular function (% in python) to wrap network around
+            if j==0 or j==1:
+                if start!=0:
+                    j=j+start
+            edges.append((i,j))   # add the edge to the list
+
+    neighbours={}
+    for node in nodes:
+        neighbours[node]=[]
+
+    # add the network neighbours of each node
+    for i,j in edges:
+        neighbours[i].append(j)   # add j to i's neighbours 
+        neighbours[j].append(i)   # add i to j's neighbours
+
+    return nodes, edges, neighbours
+
+
+def AddSmallWorld(neighbours):
+    keys = list(neighbours.keys())   # fetches a list of the nodes from the neighbours dictionary
+    pick1, pick2 = random.choices(keys, k=2)   # chooses two nodes at random
+
+    # adds small world links to the list of neighbours
+    neighbours[pick1].append(pick2)
+    neighbours[pick2].append(pick1)
+
+    return neighbours
+
+
+def LinkRings(nbrs1, nbrs2, n):
+    for i in range(n):
+        node1 = random.choice(list(nbrs1.keys()))
+        node2 = random.choice(list(nbrs2.keys()))
+
+        # adds small world links to the list of neighbours
+        nbrs1[node1].append(node2)
+        nbrs2[node2].append(node1)
+
+    return nbrs1, nbrs2
+
+
+def main():
+    #################################### MAKE NETWORK #####################################
+    
+    # define number of nodes and make an array of nodes
+    N1 = 100
+    N2 = 100
+    N3 = 100
+    totalN = N1+N2+N3
+
+    # define how many links are made between rings
+    link1to2 = 30
+    link2to3 = 30
+    link1to3 = 30
+
+    # create the three (currently unattached) rings of nodes
+    nodes1, edges1, neighbours1 = CreateRing(0, N1)
+    nodes2, edges2, neighbours2 = CreateRing(N1, N1+N2)
+    nodes3, edges3, neighbours3 = CreateRing(N1+N2, totalN)
+
+    # add one small world link to each ring
+    neighbours1 = AddSmallWorld(neighbours1)
+    neighbours2 = AddSmallWorld(neighbours2)
+    neighbours3 = AddSmallWorld(neighbours3)
+
+    # link the three rings
+    neighbours1, neighbours2 = LinkRings(neighbours1, neighbours2, link1to2)
+    neighbours2, neighbours3 = LinkRings(neighbours2, neighbours3, link2to3)
+    neighbours1, neighbours3 = LinkRings(neighbours1, neighbours3, link1to3)
+
+    # merge individual rings' information into definitive lists
+    nodes = np.ndarray.tolist(nodes1) + np.ndarray.tolist(nodes2) + np.ndarray.tolist(nodes2)
+    edges = edges1 + edges2 + edges3
+    neighbours = neighbours1 | neighbours2 | neighbours3
+
+    # check the results
+    #for node in neighbours: 
+        #print(node,'is connected to',neighbours[node])
+
+    ############################ DEFINE SIMULATION PARAMETERS #############################
+    # define some parameters
+    beta=0.5   # the probability that an infected node infectes a susceptible neighbour
+    seed=0   # start with a seed node (patient zero)
+
+    # generation times (in days) are drawn from the log normal distribution defined below...
+    g_mode=5 
+    g_dispersion=1.3
+    g_sigma=np.log(g_dispersion)
+    g_mu=(g_sigma**2)+np.log(g_mode)
+
+    # post-covid immunity times (in days) are drawn from the log normal distribution defined below
+    c_mode=180 
+    c_dispersion=10
+    c_sigma=np.log(c_dispersion)
+    c_mu=(c_sigma**2)+np.log(c_mode)
+
+    # vaccination effectiveness times (in days) are drawn from the log normal distribution defined below
+    v_mode=180
+    v_dispersion=10
+    v_sigma=np.log(v_dispersion)
+    v_mu=(v_sigma**2)+np.log(v_mode)
+
+    ################################## SIMULATE OUTBREAK ##################################
+    # create a list to store the sizes of X simulated outbreaks
+    X = 2000
+    outbreak_sizes=np.zeros((11,X))
+
+    # run simulation with 11 different vaccination amounts (0%, 10%, 20% etc to 100%)
+    for i in range(11):
+        # i% of the total nodes will be vaccinated at random
+        print("Running for " + str(i*10) + "%...")
+        vax_events = int((i/10)*totalN)
+
+        # run X simulations to collect outbreak sizes 
+        for j in range(1,X):
+            print("Run no. " + str(j), end="\r")
+            # we will keep an array telling us the immunity status of each node
+            # for initial conditions we start with all nodes susceptible (all values false)
+            immune=np.zeros(totalN, dtype=bool)
+
+            # create a list of events. this list will grow and shrink over time
+            events=[]
+
+            # each event is a small dictionary with keys...
+            # type: the type of event which occurs
+            # time: the time that the event occurs 
+            # primary: the node that is doing the infecting
+            # secondary: the node that is being infected
+
+            # create the first event (the seeding event) and add to events list
+            events.append(Event('trans', 0, None, seed))
+
+            #print("--- VACCINATION LIST ---")
+            # picking a node to vaccinate....
+            for x in range(vax_events):
+                pick = np.random.randint(1, totalN)   # picks a random non-immune node
+                vax_time = np.random.randint(0,31536000)   # picks a random second within the first year to vaccinate
+                events.append(Event('vax', vax_time, pick, None))   # creates a vax event and adds to the list
+                #print(pick, "will be vaccinated at", ConvertTime(vax_time))
+
+            #print("-------------------------------------------")
+            
+            # output is a tree-like network
+            tree=[]
+
+            # start a loop in which we resolve the events in time order until no events remain
+            while events:
+                event=min(events,key=lambda x: x['time'])   # fetch earliest infection event on the list
+                events.remove(event)   # remove the chosen infection from the list
+                
+                # if the selected event is a transmission...
+                if event['type']=='trans':
+                    # ignoring cases in which the secondary is already immune (so no infection occurs)...
+                    if not immune[event['secondary']]:
+                        #print(str(event['primary'])+' infected '+str(event['secondary'])+' at '+ConvertTime(event['time']))   # print the event
+                        tree.append((event['primary'],event['secondary']))   # add event to the tree
+
+                        # now we need to add more infections to the list...
+                        primary=event['secondary']   # "move on" so that the secondary becomes the new primary
+                        immune[primary]=True   # make the primary immune so that no future events can affect that node
+                        
+                        # create new infection events to add to the list
+                        for secondary in neighbours[primary]:   # for all neighbours of the primary...
+                            if random.random()<beta and not immune[secondary]:   # determines if primary infects secondary
+                                transmission_time = NewEventTime(event['time'], g_mu, g_sigma)   # when will the primary infect the secondary?
+                                events.append(Event('trans', transmission_time, primary, secondary))   # creates the transmission event and adds to list
+
+                                resusceptible_time = NewEventTime(transmission_time, c_mu, c_sigma)
+                                events.append(Event('resusceptible', resusceptible_time, secondary, None))
+
+                    # if there are no more transmission events in the events list...
+                    if len(list(filter(lambda e: e['type'] == 'trans', events)))==0:
+                        lastinfection = event['time']   # store the time of the final transmission
+
+                # if the earliest remaining event is a vaccination...
+                elif event['type']=='vax':
+                    immune[event['node']]=True   # makes the vaxxed node immune
+                    #print(event['node'],"got vaccinated at",ConvertTime(event['time']))
+
+                    end_time = NewEventTime(event['time'], v_mu, v_sigma)
+                    events.append(Event('unvax', end_time, event['node'], None))   # creates 'unvax' event and adds to list
+
+                elif event['type']=='unvax':
+                    immune[event['node']]=False   # node is no longer immune
+                    #print(event['node'], "became re-susceptible after vaccination at", ConvertTime(event['time']))
+
+                elif event['type']=='resusceptible':
+                    immune[event['node']]=False
+                    #print(event['node'], "became re-susceptible after infection at", ConvertTime(event['time']))
+
+            infected = []
+            for x in range(len(tree)):
+                infected.append(tree[x][1])
+
+            #print("--- OUTBREAK "+str(i+1)+" (WITH VACCINATION) STATS ---")
+
+            #print("Number of infections: "+str(len(tree)))
+            #print("Number of nodes infected: "+str(len(set(infected))))
+            #print("Last infection occurred at", ConvertTime(lastinfection))
+            
+            outbreak_sizes[i][j]=len(tree)   # append vaxxed outbreak size to list for plotting later
+
+    for i in range(11):
+        PlotOutbreakSize(outbreak_sizes[i], i, totalN)   # plots and shows the distribution of outbreak sizes
+    #PlotOutbreakSize(outbreak_vaxxed, 'One vax event per infection event', N)   # plots and shows the distribution of outbreak sizes
+    plt.legend(loc="upper left")
+    plt.show()
+
+main()
