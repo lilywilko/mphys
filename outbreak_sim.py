@@ -8,6 +8,8 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 
+import network as nw
+
 ################################### AUXILIARY FUNCTIONS ###################################
 
 # function to make a dictionary for any event type
@@ -55,62 +57,22 @@ def ConvertTime(time):
     return str(day)+" days, "+str(hour)+" hours, "+str(minutes)+" minutes, and "+str(seconds)+" seconds"
 
 
-def CreateRing(start, N):
-    nodes=np.arange(start,N,1)
-    # make a list of edges (nodes are connected to those that are close to them)
-    edges=[]
-    for i in nodes:
-        # for each node i, make two (3-1=2) new edges
-        for j in range(1,3):
-            j=((i+j)%N)   # use the modular function (% in python) to wrap network around
-            if j==0 or j==1:
-                if start!=0:
-                    j=j+start
-            edges.append((i,j))   # add the edge to the list
-
-    neighbours={}
-    for node in nodes:
-        neighbours[node]=[]
-
-    # add the network neighbours of each node
-    for i,j in edges:
-        neighbours[i].append(j)   # add j to i's neighbours 
-        neighbours[j].append(i)   # add i to j's neighbours
-
-    return nodes, edges, neighbours
-
-
-def AddSmallWorld(neighbours):
-    keys = list(neighbours.keys())   # fetches a list of the nodes from the neighbours dictionary
-    pick1, pick2 = random.choices(keys, k=2)   # chooses two nodes at random
-
-    # adds small world links to the list of neighbours
-    neighbours[pick1].append(pick2)
-    neighbours[pick2].append(pick1)
-
-    return neighbours
-
-
-def LinkRings(nbrs1, nbrs2, n):
-    for i in range(n):
-        node1 = random.choice(list(nbrs1.keys()))
-        node2 = random.choice(list(nbrs2.keys()))
-
-        # adds small world links to the list of neighbours
-        nbrs1[node1].append(node2)
-        nbrs2[node2].append(node1)
-
-    return nbrs1, nbrs2
+def LogNormal(mode, dispersion):
+    sigma=np.log(dispersion)
+    mu=(sigma**2)+np.log(mode)
+    return sigma, mu
 
 
 def main():
     #################################### MAKE NETWORK #####################################
     
-    # define number of nodes and make an array of nodes
-    N1 = 100
-    N2 = 100
-    N3 = 100
-    totalN = N1+N2+N3
+    # define number of nodes in each age group (proportions from 2019 https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/articles/overviewoftheukpopulation/january2021#the-uks-population-is-ageing)
+    totalN = 500
+    N1 = int(0.19*totalN)
+    N2 = int(0.625*totalN)
+    N3 = int(totalN-(N1+N2))
+
+    print("U16s: "+str(N1)+", 16-64s: "+str(N2)+", 65+: "+str(N3))
 
     # define how many links are made between rings
     link1to2 = 30
@@ -118,19 +80,19 @@ def main():
     link1to3 = 30
 
     # create the three (currently unattached) rings of nodes
-    nodes1, edges1, neighbours1 = CreateRing(0, N1)
-    nodes2, edges2, neighbours2 = CreateRing(N1, N1+N2)
-    nodes3, edges3, neighbours3 = CreateRing(N1+N2, totalN)
+    nodes1, edges1, neighbours1 = nw.CreateRing(0, N1)
+    nodes2, edges2, neighbours2 = nw.CreateRing(N1, N1+N2)
+    nodes3, edges3, neighbours3 = nw.CreateRing(N1+N2, totalN)
 
     # add one small world link to each ring
-    neighbours1 = AddSmallWorld(neighbours1)
-    neighbours2 = AddSmallWorld(neighbours2)
-    neighbours3 = AddSmallWorld(neighbours3)
+    neighbours1 = nw.SmallWorld(neighbours1)
+    neighbours2 = nw.SmallWorld(neighbours2)
+    neighbours3 = nw.SmallWorld(neighbours3)
 
     # link the three rings
-    neighbours1, neighbours2 = LinkRings(neighbours1, neighbours2, link1to2)
-    neighbours2, neighbours3 = LinkRings(neighbours2, neighbours3, link2to3)
-    neighbours1, neighbours3 = LinkRings(neighbours1, neighbours3, link1to3)
+    neighbours1, neighbours2 = nw.LinkRings(neighbours1, neighbours2, link1to2)
+    neighbours2, neighbours3 = nw.LinkRings(neighbours2, neighbours3, link2to3)
+    neighbours1, neighbours3 = nw.LinkRings(neighbours1, neighbours3, link1to3)
 
     # merge individual rings' information into definitive lists
     nodes = np.ndarray.tolist(nodes1) + np.ndarray.tolist(nodes2) + np.ndarray.tolist(nodes2)
@@ -149,24 +111,21 @@ def main():
     # generation times (in days) are drawn from the log normal distribution defined below...
     g_mode=5 
     g_dispersion=1.3
-    g_sigma=np.log(g_dispersion)
-    g_mu=(g_sigma**2)+np.log(g_mode)
+    g_sigma, g_mu = LogNormal(g_mode, g_dispersion)
 
     # post-covid immunity times (in days) are drawn from the log normal distribution defined below
     c_mode=180 
     c_dispersion=10
-    c_sigma=np.log(c_dispersion)
-    c_mu=(c_sigma**2)+np.log(c_mode)
+    c_sigma, c_mu = LogNormal(c_mode, c_dispersion)
 
     # vaccination effectiveness times (in days) are drawn from the log normal distribution defined below
     v_mode=180
     v_dispersion=10
-    v_sigma=np.log(v_dispersion)
-    v_mu=(v_sigma**2)+np.log(v_mode)
+    v_sigma, v_mu = LogNormal(g_mode, g_dispersion)
 
     ################################## SIMULATE OUTBREAK ##################################
     # create a list to store the sizes of X simulated outbreaks
-    X = 2000
+    X = 1
     outbreak_sizes=np.zeros((11,X))
 
     # run simulation with 11 different vaccination amounts (0%, 10%, 20% etc to 100%)
@@ -176,7 +135,7 @@ def main():
         vax_events = int((i/10)*totalN)
 
         # run X simulations to collect outbreak sizes 
-        for j in range(1,X):
+        for j in range(X):
             print("Run no. " + str(j), end="\r")
             # we will keep an array telling us the immunity status of each node
             # for initial conditions we start with all nodes susceptible (all values false)
@@ -194,15 +153,15 @@ def main():
             # create the first event (the seeding event) and add to events list
             events.append(Event('trans', 0, None, seed))
 
-            #print("--- VACCINATION LIST ---")
+            
             # picking a node to vaccinate....
+            picked=np.zeros(totalN, dtype=bool)
             for x in range(vax_events):
-                pick = np.random.randint(1, totalN)   # picks a random non-immune node
+                unvaxxed = np.where(picked==False).nonzero()
+                pick = np.random.choice(unvaxxed)   # picks a random non-immune node
+                print(pick)
                 vax_time = np.random.randint(0,31536000)   # picks a random second within the first year to vaccinate
                 events.append(Event('vax', vax_time, pick, None))   # creates a vax event and adds to the list
-                #print(pick, "will be vaccinated at", ConvertTime(vax_time))
-
-            #print("-------------------------------------------")
             
             # output is a tree-like network
             tree=[]
@@ -256,18 +215,18 @@ def main():
             for x in range(len(tree)):
                 infected.append(tree[x][1])
 
-            #print("--- OUTBREAK "+str(i+1)+" (WITH VACCINATION) STATS ---")
+            print("--- OUTBREAK "+str(i+1)+" (" + str(i*10) + "% VACCINATION) STATS ---")
 
-            #print("Number of infections: "+str(len(tree)))
-            #print("Number of nodes infected: "+str(len(set(infected))))
-            #print("Last infection occurred at", ConvertTime(lastinfection))
+            print("Number of infections: "+str(len(tree)))
+            print("Number of nodes infected: "+str(len(set(infected))))
+            print("Last infection occurred at", ConvertTime(lastinfection))
             
             outbreak_sizes[i][j]=len(tree)   # append vaxxed outbreak size to list for plotting later
 
-    for i in range(11):
-        PlotOutbreakSize(outbreak_sizes[i], i, totalN)   # plots and shows the distribution of outbreak sizes
+    #for i in range(11):
+        #PlotOutbreakSize(outbreak_sizes[i], i, totalN)   # plots and shows the distribution of outbreak sizes
     #PlotOutbreakSize(outbreak_vaxxed, 'One vax event per infection event', N)   # plots and shows the distribution of outbreak sizes
-    plt.legend(loc="upper left")
-    plt.show()
+    #plt.legend(loc="upper left")
+    #plt.show()
 
 main()

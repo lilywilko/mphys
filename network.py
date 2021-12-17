@@ -26,7 +26,7 @@ def CreateRing(start, N):
     return nodes, edges, neighbours
 
 
-def AddSmallWorld(neighbours):
+def SmallWorld(neighbours):
     keys = list(neighbours.keys())   # fetches a list of the nodes from the neighbours dictionary
     pick1, pick2 = random.choices(keys, k=2)   # chooses two nodes at random
 
