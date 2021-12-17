@@ -67,7 +67,7 @@ def main():
     #################################### MAKE NETWORK #####################################
     
     # define number of nodes in each age group (proportions from 2019 https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/articles/overviewoftheukpopulation/january2021#the-uks-population-is-ageing)
-    totalN = 500
+    totalN = 1000
     N1 = int(0.19*totalN)
     N2 = int(0.625*totalN)
     N3 = int(totalN-(N1+N2))
@@ -121,7 +121,7 @@ def main():
     # vaccination effectiveness times (in days) are drawn from the log normal distribution defined below
     v_mode=180
     v_dispersion=10
-    v_sigma, v_mu = LogNormal(g_mode, g_dispersion)
+    v_sigma, v_mu = LogNormal(v_mode, v_dispersion)
 
     ################################## SIMULATE OUTBREAK ##################################
     # create a list to store the sizes of X simulated outbreaks
@@ -129,20 +129,17 @@ def main():
     outbreak_sizes=np.zeros((11,X))
 
     # run simulation with 11 different vaccination amounts (0%, 10%, 20% etc to 100%)
-    for i in range(11):
+    for i in range(2):
         # i% of the total nodes will be vaccinated at random
-        print("Running for " + str(i*10) + "%...")
         vax_events = int((i/10)*totalN)
 
         # run X simulations to collect outbreak sizes 
         for j in range(X):
-            print("Run no. " + str(j), end="\r")
             # we will keep an array telling us the immunity status of each node
             # for initial conditions we start with all nodes susceptible (all values false)
             immune=np.zeros(totalN, dtype=bool)
 
-            # create a list of events. this list will grow and shrink over time
-            events=[]
+            events=[]   # create a list of events (this list will grow and shrink over time)
 
             # each event is a small dictionary with keys...
             # type: the type of event which occurs
@@ -155,13 +152,12 @@ def main():
 
             
             # picking a node to vaccinate....
-            picked=np.zeros(totalN, dtype=bool)
+            picked=np.zeros(totalN, dtype=bool)   # starts with an array of all "false" (unvaccinated)
             for x in range(vax_events):
-                unvaxxed = np.where(picked==False).nonzero()
-                pick = np.random.choice(unvaxxed)   # picks a random non-immune node
-                print(pick)
+                pick = random.choice(list(enumerate(picked[picked==False])))   # picks a random unvaccinated node
+                picked[pick[0]] = True
                 vax_time = np.random.randint(0,31536000)   # picks a random second within the first year to vaccinate
-                events.append(Event('vax', vax_time, pick, None))   # creates a vax event and adds to the list
+                events.append(Event('vax', vax_time, pick[0], None))   # creates a vax event and adds to the list
             
             # output is a tree-like network
             tree=[]
