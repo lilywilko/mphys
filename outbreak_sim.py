@@ -72,7 +72,9 @@ def main():
     N2 = int(0.625*totalN)
     N3 = int(totalN-(N1+N2))
 
-    print("U16s: "+str(N1)+", 16-64s: "+str(N2)+", 65+: "+str(N3))
+    print("\n------------- NODE NUMBERS -------------")
+    print("Total nodes: " + str(totalN))
+    print("U16s: "+str(N1)+", 16-64s: "+str(N2)+", 65+: "+str(N3)+"\n")
 
     # define how many links are made between rings
     link1to2 = 30
@@ -215,7 +217,7 @@ def main():
 
             print("Number of infections: "+str(len(tree)))
             print("Number of nodes infected: "+str(len(set(infected))))
-            print("Last infection occurred at", ConvertTime(lastinfection))
+            print("Last infection occurred at "+str(ConvertTime(lastinfection))+"\n")
             
             outbreak_sizes[i][j]=len(tree)   # append vaxxed outbreak size to list for plotting later
 
