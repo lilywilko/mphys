@@ -30,6 +30,9 @@ def SmallWorld(neighbours):
     keys = list(neighbours.keys())   # fetches a list of the nodes from the neighbours dictionary
     pick1, pick2 = random.choices(keys, k=2)   # chooses two nodes at random
 
+    while (pick2 in neighbours[pick1]):
+        pick1, pick2 = random.choices(keys, k=2)   # keep choosing if they are already neighbours
+
     # adds small world links to the list of neighbours
     neighbours[pick1].append(pick2)
     neighbours[pick2].append(pick1)
@@ -47,3 +50,31 @@ def LinkRings(nbrs1, nbrs2, n):
         nbrs2[node2].append(node1)
 
     return nbrs1, nbrs2
+
+
+def MakeNetwork(N1, N2, N3, L1to2, L2to3, L1to3):
+    # create the three (currently unattached) rings of nodes
+    nodes1, edges1, neighbours1 = CreateRing(0, N1)
+    nodes2, edges2, neighbours2 = CreateRing(N1, N1+N2)
+    nodes3, edges3, neighbours3 = CreateRing(N1+N2, N1+N2+N3)
+
+    # add one small world link to each ring
+    neighbours1 = SmallWorld(neighbours1)
+    neighbours2 = SmallWorld(neighbours2)
+    neighbours3 = SmallWorld(neighbours3)
+
+    # link the three rings
+    neighbours1, neighbours2 = LinkRings(neighbours1, neighbours2, L1to2)
+    neighbours2, neighbours3 = LinkRings(neighbours2, neighbours3, L2to3)
+    neighbours1, neighbours3 = LinkRings(neighbours1, neighbours3, L1to3)
+
+    # merge individual rings' information into definitive lists
+    nodes = np.ndarray.tolist(nodes1) + np.ndarray.tolist(nodes2) + np.ndarray.tolist(nodes2)
+    edges = edges1 + edges2 + edges3
+    neighbours = neighbours1 | neighbours2 | neighbours3
+
+    # check results:
+    #for node in neighbours:
+        #print(node,'is connected to',neighbours[node])
+
+    return nodes, edges, neighbours

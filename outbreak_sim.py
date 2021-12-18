@@ -4,6 +4,7 @@
 
 ######################################### IMPORTS #########################################
 
+import csv
 import random
 import numpy as np
 import matplotlib.pyplot as plt
@@ -32,7 +33,7 @@ def Event(type, time, primary, secondary):
 
 # function to plot the distribution of outbreak sizes
 def PlotOutbreakSize(values, i, n):
-    colours = ['maroon', 'red', 'darkorange', 'gold', 'limegreen', 'turquoise', 'deepskyblue', 'darkblue', 'indigo', 'darkviolet', 'violet']
+    colours = ['maroon', 'r', 'orangered', 'darkorange', 'orange', 'gold', 'yellow', 'greenyellow', 'lawngreen', 'palegreen', 'springgreen']
     #bin_edges = np.arange(0.5, max(values)+0.5, 1)   # creates array of histogram bin edges ±0.5 of each integer outbreak size
     plt.hist(values, bins=40, label=str(i*10)+"% vax", histtype='step', color=colours[i])   # draws histogram of outbreak sizes
     plt.xlabel("Outbreak size")
@@ -71,39 +72,17 @@ def main():
     N1 = int(0.19*totalN)
     N2 = int(0.625*totalN)
     N3 = int(totalN-(N1+N2))
-
-    print("\n------------- NODE NUMBERS -------------")
-    print("Total nodes: " + str(totalN))
-    print("U16s: "+str(N1)+", 16-64s: "+str(N2)+", 65+: "+str(N3)+"\n")
-
+    
     # define how many links are made between rings
     link1to2 = 30
     link2to3 = 30
     link1to3 = 30
 
-    # create the three (currently unattached) rings of nodes
-    nodes1, edges1, neighbours1 = nw.CreateRing(0, N1)
-    nodes2, edges2, neighbours2 = nw.CreateRing(N1, N1+N2)
-    nodes3, edges3, neighbours3 = nw.CreateRing(N1+N2, totalN)
+    print("\n-------------- NODE NUMBERS -------------")
+    print("Total nodes: " + str(totalN))
+    print("U16s: "+str(N1)+", 16-64s: "+str(N2)+", 65+: "+str(N3)+"\n")
 
-    # add one small world link to each ring
-    neighbours1 = nw.SmallWorld(neighbours1)
-    neighbours2 = nw.SmallWorld(neighbours2)
-    neighbours3 = nw.SmallWorld(neighbours3)
-
-    # link the three rings
-    neighbours1, neighbours2 = nw.LinkRings(neighbours1, neighbours2, link1to2)
-    neighbours2, neighbours3 = nw.LinkRings(neighbours2, neighbours3, link2to3)
-    neighbours1, neighbours3 = nw.LinkRings(neighbours1, neighbours3, link1to3)
-
-    # merge individual rings' information into definitive lists
-    nodes = np.ndarray.tolist(nodes1) + np.ndarray.tolist(nodes2) + np.ndarray.tolist(nodes2)
-    edges = edges1 + edges2 + edges3
-    neighbours = neighbours1 | neighbours2 | neighbours3
-
-    # check the results
-    #for node in neighbours: 
-        #print(node,'is connected to',neighbours[node])
+    nodes, edges, neighbours = nw.MakeNetwork(N1, N2, N3, link1to2, link2to3, link1to3)
 
     ############################ DEFINE SIMULATION PARAMETERS #############################
     # define some parameters
@@ -115,25 +94,24 @@ def main():
     g_dispersion=1.3
     g_sigma, g_mu = LogNormal(g_mode, g_dispersion)
 
-    # post-covid immunity times (in days) are drawn from the log normal distribution defined below
+    # post-covid immunity times (in days) are drawn from the log normal distribution defined below...
     c_mode=180 
     c_dispersion=10
     c_sigma, c_mu = LogNormal(c_mode, c_dispersion)
 
-    # vaccination effectiveness times (in days) are drawn from the log normal distribution defined below
+    # vaccination effectiveness times (in days) are drawn from the log normal distribution defined below...
     v_mode=180
     v_dispersion=10
     v_sigma, v_mu = LogNormal(v_mode, v_dispersion)
 
     ################################## SIMULATE OUTBREAK ##################################
     # create a list to store the sizes of X simulated outbreaks
-    X = 1
+    X = 2000
     outbreak_sizes=np.zeros((11,X))
 
     # run simulation with 11 different vaccination amounts (0%, 10%, 20% etc to 100%)
-    for i in range(2):
-        # i% of the total nodes will be vaccinated at random
-        vax_events = int((i/10)*totalN)
+    for i in range(11):
+        vax_events = int((i/10)*totalN)   # (i*10)% of the total nodes will be vaccinated at random
 
         # run X simulations to collect outbreak sizes 
         for j in range(X):
@@ -149,9 +127,8 @@ def main():
             # primary: the node that is doing the infecting
             # secondary: the node that is being infected
 
-            # create the first event (the seeding event) and add to events list
+            # create the first transmission event (the seeding event) and add to events list
             events.append(Event('trans', 0, None, seed))
-
             
             # picking a node to vaccinate....
             picked=np.zeros(totalN, dtype=bool)   # starts with an array of all "false" (unvaccinated)
@@ -213,18 +190,18 @@ def main():
             for x in range(len(tree)):
                 infected.append(tree[x][1])
 
-            print("--- OUTBREAK "+str(i+1)+" (" + str(i*10) + "% VACCINATION) STATS ---")
+            #print("--- OUTBREAK "+str(i+1)+" (" + str(i*10) + "% VACCINATION) STATS ---")
 
-            print("Number of infections: "+str(len(tree)))
-            print("Number of nodes infected: "+str(len(set(infected))))
-            print("Last infection occurred at "+str(ConvertTime(lastinfection))+"\n")
+            #print("Number of infections: "+str(len(tree)))
+            #print("Number of nodes infected: "+str(len(set(infected))))
+            #print("Last infection occurred at "+str(ConvertTime(lastinfection))+"\n")
             
             outbreak_sizes[i][j]=len(tree)   # append vaxxed outbreak size to list for plotting later
 
-    #for i in range(11):
-        #PlotOutbreakSize(outbreak_sizes[i], i, totalN)   # plots and shows the distribution of outbreak sizes
-    #PlotOutbreakSize(outbreak_vaxxed, 'One vax event per infection event', N)   # plots and shows the distribution of outbreak sizes
-    #plt.legend(loc="upper left")
-    #plt.show()
+    for i in range(11):
+        PlotOutbreakSize(outbreak_sizes[i], i, totalN)   # plots and shows the distribution of outbreak sizes
+
+    plt.legend(loc="upper left")
+    plt.show()
 
 main()
