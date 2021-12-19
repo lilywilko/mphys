@@ -31,16 +31,6 @@ def Event(type, time, primary, secondary):
     return event
 
 
-# function to plot the distribution of outbreak sizes
-def PlotOutbreakSize(values, i, n):
-    colours = ['maroon', 'r', 'orangered', 'darkorange', 'orange', 'gold', 'yellow', 'greenyellow', 'lawngreen', 'palegreen', 'springgreen']
-    #bin_edges = np.arange(0.5, max(values)+0.5, 1)   # creates array of histogram bin edges ±0.5 of each integer outbreak size
-    plt.hist(values, bins=40, label=str(i*10)+"% vax", histtype='step', color=colours[i])   # draws histogram of outbreak sizes
-    plt.xlabel("Outbreak size")
-    plt.ylabel("Frequency")
-    plt.title("Distribution of outbreak sizes for "+str(len(values))+" simulated outbreaks \n on a network of "+str(n)+" nodes")
-
-
 # function to return the next event time
 def NewEventTime(time, mu, sigma):
     wait=int((24*60*60)*np.random.lognormal(mu,sigma))   # how long will it be (in seconds) until the next event?
@@ -106,18 +96,20 @@ def main():
 
     ################################## SIMULATE OUTBREAK ##################################
     # create a list to store the sizes of X simulated outbreaks
-    X = 2000
+    X = 5000
     outbreak_sizes=np.zeros((11,X))
 
-    file = open('Outbreak_vs_vax_percentage.csv','a')
+    file = open('5000_outbreaks_vs_vax_percentage.csv','a')
     file.write('Network size, N1, N2, N3, Ring 1 SMLs, Ring 2 SMLs, Ring 3 SMLs, Rings 1-2 links, Rings 1-3 links, Rings 2-3 links, Vaccination %, Outbreak size\n')
 
     # run simulation with 11 different vaccination amounts (0%, 10%, 20% etc to 100%)
     for i in range(11):
         vax_events = int((i/10)*totalN)   # (i*10)% of the total nodes will be vaccinated at random
+        print("Running for "+str(i*10)+"%...")
 
         # run X simulations to collect outbreak sizes 
         for j in range(X):
+            print(str(round((j*100)/X,1))+"% complete",end = "\r")
             # we will keep an array telling us the immunity status of each node
             # for initial conditions we start with all nodes susceptible (all values false)
             immune=np.zeros(totalN, dtype=bool)
@@ -203,11 +195,5 @@ def main():
             file.write(str(totalN)+","+str(N1)+","+str(N2)+","+str(N3)+",1,1,1,"+str(link1to2)+","+str(link1to3)+","+str(link2to3)+","+str(i*10)+","+str(len(tree))+"\n")
 
     file.close()
-
-    for i in range(11):
-        PlotOutbreakSize(outbreak_sizes[i], i, totalN)   # plots and shows the distribution of outbreak sizes
-
-    plt.legend(loc="upper left")
-    plt.show()
 
 main()
