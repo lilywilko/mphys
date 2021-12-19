@@ -109,6 +109,9 @@ def main():
     X = 2000
     outbreak_sizes=np.zeros((11,X))
 
+    file = open('Outbreak_vs_vax_percentage.csv','a')
+    file.write('Network size, N1, N2, N3, Ring 1 SMLs, Ring 2 SMLs, Ring 3 SMLs, Rings 1-2 links, Rings 1-3 links, Rings 2-3 links, Vaccination %, Outbreak size\n')
+
     # run simulation with 11 different vaccination amounts (0%, 10%, 20% etc to 100%)
     for i in range(11):
         vax_events = int((i/10)*totalN)   # (i*10)% of the total nodes will be vaccinated at random
@@ -197,6 +200,9 @@ def main():
             #print("Last infection occurred at "+str(ConvertTime(lastinfection))+"\n")
             
             outbreak_sizes[i][j]=len(tree)   # append vaxxed outbreak size to list for plotting later
+            file.write(str(totalN)+","+str(N1)+","+str(N2)+","+str(N3)+",1,1,1,"+str(link1to2)+","+str(link1to3)+","+str(link2to3)+","+str(i*10)+","+str(len(tree))+"\n")
+
+    file.close()
 
     for i in range(11):
         PlotOutbreakSize(outbreak_sizes[i], i, totalN)   # plots and shows the distribution of outbreak sizes
