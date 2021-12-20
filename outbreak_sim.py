@@ -77,7 +77,7 @@ def main():
     ############################ DEFINE SIMULATION PARAMETERS #############################
     # define some parameters
     beta=0.5   # the probability that an infected node infectes a susceptible neighbour
-    seed=0   # start with a seed node (patient zero)
+    seed=N1+1   # start with a seed node (patient zero), the first "adult" node
 
     # generation times (in days) are drawn from the log normal distribution defined below...
     g_mode=5 
