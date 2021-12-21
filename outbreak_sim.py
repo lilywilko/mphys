@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import network as nw
+import vaccination as vx
 
 ################################### AUXILIARY FUNCTIONS ###################################
 
@@ -99,12 +100,12 @@ def main():
     X = 5000
     outbreak_sizes=np.zeros((11,X))
 
-    file = open('5000_outbreaks_vs_vax_percentage.csv','a')
+    file = open('test.csv','a')
     file.write('Network size, N1, N2, N3, Ring 1 SMLs, Ring 2 SMLs, Ring 3 SMLs, Rings 1-2 links, Rings 1-3 links, Rings 2-3 links, Vaccination %, Outbreak size\n')
 
     # run simulation with 11 different vaccination amounts (0%, 10%, 20% etc to 100%)
     for i in range(11):
-        vax_events = int((i/10)*totalN)   # (i*10)% of the total nodes will be vaccinated at random
+        vax_frac = int(i/10)   # (i*10)% of the total nodes will be vaccinated at random
         print("Running for "+str(i*10)+"%...")
 
         # run X simulations to collect outbreak sizes 
@@ -125,13 +126,7 @@ def main():
             # create the first transmission event (the seeding event) and add to events list
             events.append(Event('trans', 0, None, seed))
             
-            # picking a node to vaccinate....
-            picked=np.zeros(totalN, dtype=bool)   # starts with an array of all "false" (unvaccinated)
-            for x in range(vax_events):
-                pick = random.choice(list(enumerate(picked[picked==False])))   # picks a random unvaccinated node
-                picked[pick[0]] = True
-                vax_time = np.random.randint(0,31536000)   # picks a random second within the first year to vaccinate
-                events.append(Event('vax', vax_time, pick[0], None))   # creates a vax event and adds to the list
+            vx.RandomVax(vax_frac, totalN)
             
             # output is a tree-like network
             tree=[]
