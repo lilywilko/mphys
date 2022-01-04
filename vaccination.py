@@ -66,8 +66,6 @@ def AgeWaveVax(frac, N1, N2, N3, events):
 
         events.append(Event('vax', vax_time, pick[0], None))   # creates a vax event and adds to the list
 
-        print("Choosing elderly people to vaccinate..." + str(x), end="\r")
-
     
     # picking ring 2 (adult) nodes to vaccinate next...
     for x in range(int(frac*N2)):
@@ -79,8 +77,6 @@ def AgeWaveVax(frac, N1, N2, N3, events):
         vax_time = vax_time + (450*24*60*60)   # first vaccine in the uk was after 11 months - this is a correction to delay all vaccines
 
         events.append(Event('vax', vax_time, pick[0], None))   # creates a vax event and adds to the list
-
-        print("Choosing adults to vaccinate..." + str(x), end="\r")
 
 
     # lowers the fraction significantly as not many children have been vaccinated
@@ -96,7 +92,5 @@ def AgeWaveVax(frac, N1, N2, N3, events):
         vax_time = vax_time + (450*24*60*60)   # first vaccine in the uk was after 11 months - this is a correction to delay all vaccines
 
         events.append(Event('vax', vax_time, pick[0], None))   # creates a vax event and adds to the list
-
-        print("Choosing children to vaccinate...", str(x), end="\r")
 
     return events

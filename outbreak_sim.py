@@ -66,10 +66,12 @@ def main():
     ############################ DEFINE SIMULATION PARAMETERS #############################
     
     # define number of nodes in each age group (proportions from 2019 https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/articles/overviewoftheukpopulation/january2021#the-uks-population-is-ageing)
-    totalN = 100000
+    totalN = 10000
     N1 = int(0.19*totalN)
     N2 = int(0.625*totalN)
     N3 = int(totalN-(N1+N2))
+
+    time_period = (7*24*60*60)   # defines the amount of time to count 'recent' cases (for plotting). default is 1 week
 
     vax_type = 'random'   # can be 'random', 'agebased', or 'sequential'
     
@@ -105,11 +107,11 @@ def main():
     # create a list to store the sizes of X simulated outbreaks
     X = 20
 
-    file = open('test.csv','a')
+    file = open('active_cases_data.csv','w')
     
     # hack to only write header if the file is new (otherwise, just append new data)
-    if os.stat('test.csv').st_size == 0:
-        file.write('Network size, N1, N2, N3, Ring 1 SMLs, Ring 2 SMLs, Ring 3 SMLs, Rings 1-2 links, Rings 1-3 links, Rings 2-3 links, Vaccination %, Outbreak size\n')
+    #if os.stat('active_cases_data.csv').st_size == 0:
+    file.write("Active cases, Time (s) \n")
 
     #vax_frac = 0.5   # (i*10)% of the total nodes will be vaccinated at random (FOR RANDOMVAX)
 
@@ -124,6 +126,9 @@ def main():
         #events = vx.RandomVax(vax_frac, totalN, events)   # randomly chooses a given % of nodes to be vaccinated at a random time in the first year
         events = vx.AgeWaveVax(0.75, N1, N2, N3, events)
 
+        case_numbers = []
+        active_cases = []
+
         # start a loop in which we resolve the events in time order until no events remain
         while events:
             event=min(events,key=lambda x: x['time'])   # fetch earliest infection event on the list
@@ -135,6 +140,8 @@ def main():
                 if not immune[event['secondary']]:
                     print("\U0001F534" + str(event['primary'])+' infected '+str(event['secondary'])+' at '+ConvertTime(event['time']))   # print the event
                     tree.append((event['primary'],event['secondary']))   # add event to the tree
+
+                    active_cases.append(event)
 
                     # now we need to add more infections to the list...
                     primary=event['secondary']   # "move on" so that the secondary becomes the new primary
@@ -169,6 +176,14 @@ def main():
                 immune[event['node']]=False
                 #print("\U0001F7E1" + str(event['node']) + " became re-susceptible after infection at " + ConvertTime(event['time']))
 
+            # removes events from recents if it is older than the specified time_period (typically a week)
+
+            active_cases = [item for item in active_cases if item['time'] > (event['time']-time_period)]
+
+            if len(active_cases)!=0:
+                case_numbers.append((len(active_cases), event['time']))
+                file.write(str(len(active_cases))+"," + str(event["time"]) + "\n")
+
         infected = []
         for x in range(len(tree)):
             infected.append(tree[x][1])
@@ -178,9 +193,12 @@ def main():
         print("Number of infections: "+str(len(tree)))
         print("Number of nodes infected: "+str(len(set(infected))))
         print("Last infection occurred at "+str(ConvertTime(lastinfection))+"\n")
-        
-        #file.write(str(totalN)+","+str(N1)+","+str(N2)+","+str(N3)+",1,1,1,"+str(link1to2)+","+str(link1to3)+","+str(link2to3)+","+str(int(vax_frac*totalN/10))+","+str(len(tree))+"\n")
+    
 
     file.close()
+    x_vals = [x[1] for x in case_numbers]
+    y_vals = [x[0] for x in case_numbers]
+    plt.plot(x_val,y_val)
+    plt.show()
 
 main()

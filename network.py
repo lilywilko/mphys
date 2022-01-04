@@ -62,7 +62,7 @@ def MakeNetwork(N1, N2, N3, L1to2, L2to3, L1to3):
 
     # adds small world links within each ring (int is the number for that ring)
     neighbours1 = SmallWorld(neighbours1, 100)
-    neighbours2 = SmallWorld(neighbours2, 300)
+    neighbours2 = SmallWorld(neighbours2, 100)
     neighbours3 = SmallWorld(neighbours3, 60)
 
     # link the three rings
