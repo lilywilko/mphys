@@ -63,28 +63,22 @@ def LogNormal(mode, dispersion):
 
 
 def main():
-    #################################### MAKE NETWORK #####################################
+    ############################ DEFINE SIMULATION PARAMETERS #############################
     
     # define number of nodes in each age group (proportions from 2019 https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/articles/overviewoftheukpopulation/january2021#the-uks-population-is-ageing)
-    totalN = 1000
+    totalN = 100000
     N1 = int(0.19*totalN)
     N2 = int(0.625*totalN)
     N3 = int(totalN-(N1+N2))
+
+    vax_type = 'random'   # can be 'random', 'agebased', or 'sequential'
     
-    # define how many links are made between rings
-    link1to2 = 30
-    link2to3 = 30
-    link1to3 = 30
+    # define how many links are made between rings (arbitrary numbers for now)
+    link1to2 = int(N1*1.75)
+    link2to3 = int(N2*0.85)
+    link1to3 = int(N3*0.8)
 
-    print("\n-------------- NODE NUMBERS -------------")
-    print("Total nodes: " + str(totalN))
-    print("U16s: "+str(N1)+", 16-64s: "+str(N2)+", 65+: "+str(N3)+"\n")
-
-    nodes, edges, neighbours = nw.MakeNetwork(N1, N2, N3, link1to2, link2to3, link1to3)
-
-    ############################ DEFINE SIMULATION PARAMETERS #############################
-    # define some parameters
-    beta=0.5   # the probability that an infected node infectes a susceptible neighbour
+    beta=0.5   # the probability that an infected node infects a susceptible neighbour
     seed=N1+1   # start with a seed node (patient zero), the first "adult" node
 
     # generation times (in days) are drawn from the log normal distribution defined below...
@@ -103,6 +97,11 @@ def main():
     v_sigma, v_mu = LogNormal(v_mode, v_dispersion)
 
     ################################## SIMULATE OUTBREAK ##################################
+    print("\n-------------- NODE NUMBERS -------------")
+    print("Total nodes: " + str(totalN))
+    print("U16s: "+str(N1)+", 16-64s: "+str(N2)+", 65+: "+str(N3)+"\n")
+
+    nodes, edges, neighbours = nw.MakeNetwork(N1, N2, N3, link1to2, link2to3, link1to3)
     # create a list to store the sizes of X simulated outbreaks
     X = 20
 
@@ -112,19 +111,18 @@ def main():
     if os.stat('test.csv').st_size == 0:
         file.write('Network size, N1, N2, N3, Ring 1 SMLs, Ring 2 SMLs, Ring 3 SMLs, Rings 1-2 links, Rings 1-3 links, Rings 2-3 links, Vaccination %, Outbreak size\n')
 
-    vax_frac = 0.5   # (i*10)% of the total nodes will be vaccinated at random
+    #vax_frac = 0.5   # (i*10)% of the total nodes will be vaccinated at random (FOR RANDOMVAX)
 
     # run X simulations to collect outbreak sizes 
-    for j in range(X):
-
+    for j in range(1):
         immune=np.zeros(totalN, dtype=bool)   # an array telling us the immunity of each node (for initial conditions we start with all nodes susceptible)
         tree=[]   # output is a tree-like network
 
         events=[]   # create a list of events (this list will grow and shrink over time)
         events.append(Event('trans', 0, None, seed))   # create the first transmission event (the seeding event) and add to events list
         
-        events = vx.RandomVax(vax_frac, totalN, events)   # randomly chooses a given % of nodes to be vaccinated at a random time in the first year
-        print(len(events))
+        #events = vx.RandomVax(vax_frac, totalN, events)   # randomly chooses a given % of nodes to be vaccinated at a random time in the first year
+        events = vx.AgeWaveVax(0.75, N1, N2, N3, events)
 
         # start a loop in which we resolve the events in time order until no events remain
         while events:
@@ -135,7 +133,7 @@ def main():
             if event['type']=='trans':
                 # ignoring cases in which the secondary is already immune (so no infection occurs)...
                 if not immune[event['secondary']]:
-                    #print(str(event['primary'])+' infected '+str(event['secondary'])+' at '+ConvertTime(event['time']))   # print the event
+                    print("\U0001F534" + str(event['primary'])+' infected '+str(event['secondary'])+' at '+ConvertTime(event['time']))   # print the event
                     tree.append((event['primary'],event['secondary']))   # add event to the tree
 
                     # now we need to add more infections to the list...
@@ -158,30 +156,30 @@ def main():
             # if the earliest remaining event is a vaccination...
             elif event['type']=='vax':
                 immune[event['node']]=True   # makes the vaxxed node immune
-                #print(event['node'],"got vaccinated at",ConvertTime(event['time']))
+                print("\U0001F7E2" + str(event['node']) + " got vaccinated at " + ConvertTime(event['time']))
 
                 end_time = NewEventTime(event['time'], v_mu, v_sigma)
                 events.append(Event('unvax', end_time, event['node'], None))   # creates 'unvax' event and adds to list
 
             elif event['type']=='unvax':
                 immune[event['node']]=False   # node is no longer immune
-                #print(event['node'], "became re-susceptible after vaccination at", ConvertTime(event['time']))
+                #print("\U0001F7E0" + str(event['node']) + " became re-susceptible after vaccination at " + ConvertTime(event['time']))
 
             elif event['type']=='resusceptible':
                 immune[event['node']]=False
-                #print(event['node'], "became re-susceptible after infection at", ConvertTime(event['time']))
+                #print("\U0001F7E1" + str(event['node']) + " became re-susceptible after infection at " + ConvertTime(event['time']))
 
         infected = []
         for x in range(len(tree)):
             infected.append(tree[x][1])
 
-        print("--- OUTBREAK WITH "+ str(int(vax_frac*totalN/10)) + "% VACCINATION STATS ---")
+        print("--- OUTBREAK STATS ---")
 
         print("Number of infections: "+str(len(tree)))
         print("Number of nodes infected: "+str(len(set(infected))))
         print("Last infection occurred at "+str(ConvertTime(lastinfection))+"\n")
         
-        file.write(str(totalN)+","+str(N1)+","+str(N2)+","+str(N3)+",1,1,1,"+str(link1to2)+","+str(link1to3)+","+str(link2to3)+","+str(vax_frac*100/totalN)+","+str(len(tree))+"\n")
+        #file.write(str(totalN)+","+str(N1)+","+str(N2)+","+str(N3)+",1,1,1,"+str(link1to2)+","+str(link1to3)+","+str(link2to3)+","+str(int(vax_frac*totalN/10))+","+str(len(tree))+"\n")
 
     file.close()
 
