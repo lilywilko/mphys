@@ -26,16 +26,18 @@ def CreateRing(start, N):
     return nodes, edges, neighbours
 
 
-def SmallWorld(neighbours):
+def SmallWorld(neighbours, number):
     keys = list(neighbours.keys())   # fetches a list of the nodes from the neighbours dictionary
-    pick1, pick2 = random.choices(keys, k=2)   # chooses two nodes at random
 
-    while (pick2 in neighbours[pick1]):
-        pick1, pick2 = random.choices(keys, k=2)   # keep choosing if they are already neighbours
+    for i in range(number):
+        pick1, pick2 = random.choices(keys, k=2)   # chooses two nodes at random
 
-    # adds small world links to the list of neighbours
-    neighbours[pick1].append(pick2)
-    neighbours[pick2].append(pick1)
+        while (pick2 in neighbours[pick1]):
+            pick1, pick2 = random.choices(keys, k=2)   # keep choosing if they are already neighbours
+
+        # adds small world links to the list of neighbours
+        neighbours[pick1].append(pick2)
+        neighbours[pick2].append(pick1)
 
     return neighbours
 
@@ -58,10 +60,10 @@ def MakeNetwork(N1, N2, N3, L1to2, L2to3, L1to3):
     nodes2, edges2, neighbours2 = CreateRing(N1, N1+N2)
     nodes3, edges3, neighbours3 = CreateRing(N1+N2, N1+N2+N3)
 
-    # add one small world link to each ring
-    neighbours1 = SmallWorld(neighbours1)
-    neighbours2 = SmallWorld(neighbours2)
-    neighbours3 = SmallWorld(neighbours3)
+    # adds small world links within each ring (int is the number for that ring)
+    neighbours1 = SmallWorld(neighbours1, 100)
+    neighbours2 = SmallWorld(neighbours2, 300)
+    neighbours3 = SmallWorld(neighbours3, 60)
 
     # link the three rings
     neighbours1, neighbours2 = LinkRings(neighbours1, neighbours2, L1to2)
