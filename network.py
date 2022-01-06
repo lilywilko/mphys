@@ -54,7 +54,7 @@ def LinkRings(nbrs1, nbrs2, n):
     return nbrs1, nbrs2
 
 
-def MakeNetwork(N1, N2, N3, L1to2, L2to3, L1to3):
+def DiseaseNetwork(N1, N2, N3, L1to2, L2to3, L1to3):
     # create the three (currently unattached) rings of nodes
     nodes1, edges1, neighbours1 = CreateRing(0, N1)
     nodes2, edges2, neighbours2 = CreateRing(N1, N1+N2)
@@ -71,7 +71,7 @@ def MakeNetwork(N1, N2, N3, L1to2, L2to3, L1to3):
     neighbours1, neighbours3 = LinkRings(neighbours1, neighbours3, L1to3)
 
     # merge individual rings' information into definitive lists
-    nodes = np.ndarray.tolist(nodes1) + np.ndarray.tolist(nodes2) + np.ndarray.tolist(nodes2)
+    nodes = np.ndarray.tolist(nodes1) + np.ndarray.tolist(nodes2) + np.ndarray.tolist(nodes3)
     edges = edges1 + edges2 + edges3
     neighbours = neighbours1 | neighbours2 | neighbours3
 

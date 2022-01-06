@@ -103,13 +103,14 @@ def main():
     print("Total nodes: " + str(totalN))
     print("U16s: "+str(N1)+", 16-64s: "+str(N2)+", 65+: "+str(N3)+"\n")
 
-    nodes, edges, neighbours = nw.MakeNetwork(N1, N2, N3, link1to2, link2to3, link1to3)
+    nodes, edges, neighbours = nw.DiseaseNetwork(N1, N2, N3, link1to2, link2to3, link1to3)
+
     # create a list to store the sizes of X simulated outbreaks
     X = 20
 
     file = open('active_cases_data.csv','w')
     
-    # hack to only write header if the file is new (otherwise, just append new data)
+    # only write header if the file is new (otherwise, just append new data)
     #if os.stat('active_cases_data.csv').st_size == 0:
     file.write("Active cases, Time (s) \n")
 
@@ -196,9 +197,5 @@ def main():
     
 
     file.close()
-    x_vals = [x[1] for x in case_numbers]
-    y_vals = [x[0] for x in case_numbers]
-    plt.plot(x_val,y_val)
-    plt.show()
 
 main()
