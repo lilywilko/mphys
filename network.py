@@ -80,3 +80,7 @@ def DiseaseNetwork(N1, N2, N3, L1to2, L2to3, L1to3):
         #print(node,'is connected to',neighbours[node])
 
     return nodes, edges, neighbours
+
+
+def BehaviourNetwork(nodes, edges, neighbours):
+    return nodes, edges, neighbours

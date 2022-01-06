@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 import os
 
 import network as nw
-import vaccination as vx
+import vaccination as vax
+import voter_model as vm
 
 ################################### AUXILIARY FUNCTIONS ###################################
 
@@ -99,33 +100,39 @@ def main():
     v_sigma, v_mu = LogNormal(v_mode, v_dispersion)
 
     ################################## SIMULATE OUTBREAK ##################################
+
     print("\n-------------- NODE NUMBERS -------------")
     print("Total nodes: " + str(totalN))
     print("U16s: "+str(N1)+", 16-64s: "+str(N2)+", 65+: "+str(N3)+"\n")
 
+
+    # creates separate disease and behaviour networks (currently identical)
     nodes, edges, neighbours = nw.DiseaseNetwork(N1, N2, N3, link1to2, link2to3, link1to3)
+    bnodes, bedges, bneighbours = nw.BehaviourNetwork(nodes, edges, neighbours)
 
-    # create a list to store the sizes of X simulated outbreaks
-    X = 20
-
-    file = open('active_cases_data.csv','w')
+    #file = open('active_cases_data.csv','w')
     
     # only write header if the file is new (otherwise, just append new data)
     #if os.stat('active_cases_data.csv').st_size == 0:
-    file.write("Active cases, Time (s) \n")
+    #file.write("Active cases, Time (s) \n")
 
     #vax_frac = 0.5   # (i*10)% of the total nodes will be vaccinated at random (FOR RANDOMVAX)
 
     # run X simulations to collect outbreak sizes 
     for j in range(1):
         immune=np.zeros(totalN, dtype=bool)   # an array telling us the immunity of each node (for initial conditions we start with all nodes susceptible)
+        opinions = []
+        for i in range(totalN):
+            opinions.append(random.randint(0, 1))
+
         tree=[]   # output is a tree-like network
 
         events=[]   # create a list of events (this list will grow and shrink over time)
         events.append(Event('trans', 0, None, seed))   # create the first transmission event (the seeding event) and add to events list
         
-        #events = vx.RandomVax(vax_frac, totalN, events)   # randomly chooses a given % of nodes to be vaccinated at a random time in the first year
-        events = vx.AgeWaveVax(0.75, N1, N2, N3, events)
+        #events = vax.RandomVax(vax_frac, totalN, events)   # randomly chooses a given % of nodes to be vaccinated at a random time in the first year
+        events = vax.AgeWaveVax(0.75, N1, N2, N3, events)
+        events = vm.OpinionEvents(N1, N2, N3, events)   # creates totalN*5 events for a random node to potentially change opinion at a random time
 
         case_numbers = []
         active_cases = []
@@ -139,7 +146,7 @@ def main():
             if event['type']=='trans':
                 # ignoring cases in which the secondary is already immune (so no infection occurs)...
                 if not immune[event['secondary']]:
-                    print("\U0001F534" + str(event['primary'])+' infected '+str(event['secondary'])+' at '+ConvertTime(event['time']))   # print the event
+                    #print("\U0001F534" + str(event['primary'])+' infected '+str(event['secondary'])+' at '+ConvertTime(event['time']))   # print the event
                     tree.append((event['primary'],event['secondary']))   # add event to the tree
 
                     active_cases.append(event)
@@ -163,11 +170,21 @@ def main():
 
             # if the earliest remaining event is a vaccination...
             elif event['type']=='vax':
-                immune[event['node']]=True   # makes the vaxxed node immune
-                print("\U0001F7E2" + str(event['node']) + " got vaccinated at " + ConvertTime(event['time']))
+                if opinions[event['node']] == 1:   # if the node is pro-vax (denoted 1)...
+                    immune[event['node']]=True   # makes the node immune
+                    #print("\U0001F7E2" + str(event['node']) + " got vaccinated at " + ConvertTime(event['time']))
+
+                else:
+                    print("\U0001F535" + str(event['node']) + " refused the vaccine at " + ConvertTime(event['time']))
+                    print("--")
+
 
                 end_time = NewEventTime(event['time'], v_mu, v_sigma)
                 events.append(Event('unvax', end_time, event['node'], None))   # creates 'unvax' event and adds to list
+
+            elif event['type']=='opinion':
+                neighbourpick = random.choice(neighbours[event['node']])
+                opinions[event['node']] = opinions[neighbourpick]
 
             elif event['type']=='unvax':
                 immune[event['node']]=False   # node is no longer immune
@@ -183,7 +200,9 @@ def main():
 
             if len(active_cases)!=0:
                 case_numbers.append((len(active_cases), event['time']))
-                file.write(str(len(active_cases))+"," + str(event["time"]) + "\n")
+                #file.write(str(len(active_cases))+"," + str(event["time"]) + "\n")
+
+            print("Anti-vax:" + str(sum(i == 0 for i in opinions)) + ", pro-vax: " + str(sum(i == 1 for i in opinions)), end='\r')
 
         infected = []
         for x in range(len(tree)):
@@ -196,6 +215,6 @@ def main():
         print("Last infection occurred at "+str(ConvertTime(lastinfection))+"\n")
     
 
-    file.close()
+    #file.close()
 
 main()

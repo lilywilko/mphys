@@ -2,25 +2,16 @@ import numpy as np
 import random
 
 
-def Event(type, time, primary, secondary):
+def Event(type, time, node):
     # each event is a small dictionary with keys...
             # type: the type of event which occurs
             # time: the time that the event occurs 
             # primary: the node that is doing the infecting
             # secondary: the node that is being infected
 
-    # if the event is a transmission...
-    if type=='trans':
-        event={'type':type,
-                'time':time,
-                'primary':primary,   # primary is the node that does the infecting
-                'secondary':secondary}   # secondary is the node that is infected
-
-    # if the event is a vaccination, 'unvax' (vaccination wearing off) or "resusceptible" (post-covid immunity wearing off)...
-    else:
-        event={'type':type,
-                'time':time,
-                'node':primary}   # primary is used to indicate the node (secondary will be passed as None)
+    event={'type':type,
+            'time':time,
+            'node':node}
 
     return event
 
@@ -41,7 +32,7 @@ def RandomVax(fraction, totalN, events):
         pick = random.choice(list(enumerate(picked[picked==False])))   # picks a random unvaccinated node
         picked[pick[0]] = True
         vax_time = np.random.randint(0,31536000)   # picks a random second within the first year to vaccinate
-        events.append(Event('vax', vax_time, pick[0], None))   # creates a vax event and adds to the list
+        events.append(Event('vax', vax_time, pick[0]))   # creates a vax event and adds to the list
 
     return events
 
@@ -64,7 +55,7 @@ def AgeWaveVax(frac, N1, N2, N3, events):
         vax_time = NewEventTime(0, N3_mu, N3_sigma)   # picks a random second within the first year to vaccinate
         vax_time = vax_time + (330*24*60*60)   # first vaccine in the uk was after 11 months - this is a correction to delay all vaccines
 
-        events.append(Event('vax', vax_time, pick[0], None))   # creates a vax event and adds to the list
+        events.append(Event('vax', vax_time, pick[0]))   # creates a vax event and adds to the list
 
     
     # picking ring 2 (adult) nodes to vaccinate next...
@@ -76,7 +67,7 @@ def AgeWaveVax(frac, N1, N2, N3, events):
         vax_time = NewEventTime(0, N3_mu, N3_sigma)   # picks a random second within the first year to vaccinate
         vax_time = vax_time + (450*24*60*60)   # first vaccine in the uk was after 11 months - this is a correction to delay all vaccines
 
-        events.append(Event('vax', vax_time, pick[0], None))   # creates a vax event and adds to the list
+        events.append(Event('vax', vax_time, pick[0]))   # creates a vax event and adds to the list
 
 
     # lowers the fraction significantly as not many children have been vaccinated
@@ -91,6 +82,6 @@ def AgeWaveVax(frac, N1, N2, N3, events):
         vax_time = NewEventTime(0, N3_mu, N3_sigma)   # picks a random second within the first year to vaccinate
         vax_time = vax_time + (450*24*60*60)   # first vaccine in the uk was after 11 months - this is a correction to delay all vaccines
 
-        events.append(Event('vax', vax_time, pick[0], None))   # creates a vax event and adds to the list
+        events.append(Event('vax', vax_time, pick[0]))   # creates a vax event and adds to the list
 
     return events
