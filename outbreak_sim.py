@@ -86,7 +86,7 @@ def main():
     SWL2 = int(SWLpercent*N1)
     SWL3 = int(SWLpercent*N1)
 
-    beta=0.5   # the probability that an infected node infects a susceptible neighbour
+    #beta=0.5   # the probability that an infected node infects a susceptible neighbour
     seed=N1+1   # start with a seed node (patient zero), the first "adult" node
 
     # generation times (in days) are drawn from the log normal distribution defined below...
@@ -115,8 +115,13 @@ def main():
     nodes, edges, neighbours = nw.DiseaseNetwork(N1, N2, N3, link1to2, link2to3, link1to3, SWL1, SWL2, SWL3)
     bnodes, bedges, bneighbours = nw.BehaviourNetwork(nodes, edges, neighbours)
 
-    filename = 'vaccinations_vs_refusals.csv'
+    neighbour_nos = []
+    for i in range(len(neighbours)):
+        neighbour_nos.append(len(neighbours[i]))
 
+    beta=1.5/np.mean(np.asarray(neighbour_nos))   # softcodes to force beta to be 1.5 using the randomly generated neighbours (beta * avg. neighbours = R0 = 1.5)
+
+    filename = 'test.csv'
     file = open(filename,'a')
     
     # only write header if the file is new (otherwise, just append new data)
