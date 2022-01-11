@@ -54,16 +54,16 @@ def LinkRings(nbrs1, nbrs2, n):
     return nbrs1, nbrs2
 
 
-def DiseaseNetwork(N1, N2, N3, L1to2, L2to3, L1to3):
+def DiseaseNetwork(N1, N2, N3, L1to2, L2to3, L1to3, SWL1, SWL2, SWL3):
     # create the three (currently unattached) rings of nodes
     nodes1, edges1, neighbours1 = CreateRing(0, N1)
     nodes2, edges2, neighbours2 = CreateRing(N1, N1+N2)
     nodes3, edges3, neighbours3 = CreateRing(N1+N2, N1+N2+N3)
 
     # adds small world links within each ring (int is the number for that ring)
-    neighbours1 = SmallWorld(neighbours1, 100)
-    neighbours2 = SmallWorld(neighbours2, 100)
-    neighbours3 = SmallWorld(neighbours3, 60)
+    neighbours1 = SmallWorld(neighbours1, SWL1)
+    neighbours2 = SmallWorld(neighbours2, SWL2)
+    neighbours3 = SmallWorld(neighbours3, SWL3)
 
     # link the three rings
     neighbours1, neighbours2 = LinkRings(neighbours1, neighbours2, L1to2)

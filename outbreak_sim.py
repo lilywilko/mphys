@@ -4,7 +4,6 @@
 
 ######################################### IMPORTS #########################################
 
-import csv
 import random
 import numpy as np
 import matplotlib.pyplot as plt
@@ -74,12 +73,18 @@ def main():
 
     time_period = (7*24*60*60)   # defines the amount of time to count 'recent' cases (for plotting). default is 1 week
 
-    vax_type = 'random'   # can be 'random', 'agebased', or 'sequential'
+    #vax_type = 'random'   # can be 'random', 'agebased', or 'sequential'
     
     # define how many links are made between rings (arbitrary numbers for now)
     link1to2 = int(N1*1.75)
     link2to3 = int(N2*0.85)
     link1to3 = int(N3*0.8)
+
+    SWLpercent = 0.5
+
+    SWL1 = int(SWLpercent*N1)
+    SWL2 = int(SWLpercent*N1)
+    SWL3 = int(SWLpercent*N1)
 
     beta=0.5   # the probability that an infected node infects a susceptible neighbour
     seed=N1+1   # start with a seed node (patient zero), the first "adult" node
@@ -107,23 +112,30 @@ def main():
 
 
     # creates separate disease and behaviour networks (currently identical)
-    nodes, edges, neighbours = nw.DiseaseNetwork(N1, N2, N3, link1to2, link2to3, link1to3)
+    nodes, edges, neighbours = nw.DiseaseNetwork(N1, N2, N3, link1to2, link2to3, link1to3, SWL1, SWL2, SWL3)
     bnodes, bedges, bneighbours = nw.BehaviourNetwork(nodes, edges, neighbours)
 
-    #file = open('active_cases_data.csv','w')
+    filename = 'vaccinations_vs_refusals.csv'
+
+    file = open(filename,'a')
     
     # only write header if the file is new (otherwise, just append new data)
-    #if os.stat('active_cases_data.csv').st_size == 0:
-    #file.write("Active cases, Time (s) \n")
+    if os.stat(filename).st_size == 0:
+        file.write("Vaccinations, Refusals, Time (s) \n")
 
     #vax_frac = 0.5   # (i*10)% of the total nodes will be vaccinated at random (FOR RANDOMVAX)
 
+    X = 5
     # run X simulations to collect outbreak sizes 
-    for j in range(1):
+    for j in range(X):
+
+        # status arrays
         immune=np.zeros(totalN, dtype=bool)   # an array telling us the immunity of each node (for initial conditions we start with all nodes susceptible)
-        opinions = []
+        opinions = []   # an array keeping track of everyone's behaviour status
         for i in range(totalN):
-            opinions.append(random.randint(0, 1))
+            opinions.append(random.randint(0, 1))   # randomly initialises a pro/anti-vax stance for each node
+
+        severity=np.zeros(totalN)   # an array keeping track of everyone's most severe case of disease
 
         tree=[]   # output is a tree-like network
 
@@ -131,11 +143,14 @@ def main():
         events.append(Event('trans', 0, None, seed))   # create the first transmission event (the seeding event) and add to events list
         
         #events = vax.RandomVax(vax_frac, totalN, events)   # randomly chooses a given % of nodes to be vaccinated at a random time in the first year
-        events = vax.AgeWaveVax(0.75, N1, N2, N3, events)
-        events = vm.OpinionEvents(N1, N2, N3, events)   # creates totalN*5 events for a random node to potentially change opinion at a random time
+        events = vax.AgeWaveVax(1, N1, N2, N3, events)
+        events = vm.GetOpinionEvents(N1, N2, N3, events)   # creates totalN*5 events for a random node to potentially change opinion at a random time
 
         case_numbers = []
         active_cases = []
+
+        vax_count = 0
+        refuse_count = 0
 
         # start a loop in which we resolve the events in time order until no events remain
         while events:
@@ -146,8 +161,11 @@ def main():
             if event['type']=='trans':
                 # ignoring cases in which the secondary is already immune (so no infection occurs)...
                 if not immune[event['secondary']]:
-                    #print("\U0001F534" + str(event['primary'])+' infected '+str(event['secondary'])+' at '+ConvertTime(event['time']))   # print the event
+                    print("\U0001F534" + str(event['primary'])+' infected '+str(event['secondary'])+' at '+ConvertTime(event['time']))   # print the event
                     tree.append((event['primary'],event['secondary']))   # add event to the tree
+                    case_severity = random.uniform(0,1)
+                    if case_severity>severity[event['secondary']]:
+                        severity[event['secondary']]= case_severity   # gives a random severity to the case of disease
 
                     active_cases.append(event)
 
@@ -172,11 +190,12 @@ def main():
             elif event['type']=='vax':
                 if opinions[event['node']] == 1:   # if the node is pro-vax (denoted 1)...
                     immune[event['node']]=True   # makes the node immune
-                    #print("\U0001F7E2" + str(event['node']) + " got vaccinated at " + ConvertTime(event['time']))
+                    vax_count+=1
+                    print("\U0001F7E2" + str(event['node']) + " got vaccinated at " + ConvertTime(event['time']))
 
                 else:
+                    refuse_count+=1
                     print("\U0001F535" + str(event['node']) + " refused the vaccine at " + ConvertTime(event['time']))
-                    print("--")
 
 
                 end_time = NewEventTime(event['time'], v_mu, v_sigma)
@@ -188,21 +207,24 @@ def main():
 
             elif event['type']=='unvax':
                 immune[event['node']]=False   # node is no longer immune
-                #print("\U0001F7E0" + str(event['node']) + " became re-susceptible after vaccination at " + ConvertTime(event['time']))
+                print("\U0001F7E0" + str(event['node']) + " became re-susceptible after vaccination at " + ConvertTime(event['time']))
 
             elif event['type']=='resusceptible':
                 immune[event['node']]=False
-                #print("\U0001F7E1" + str(event['node']) + " became re-susceptible after infection at " + ConvertTime(event['time']))
+                print("\U0001F7E1" + str(event['node']) + " became re-susceptible after infection at " + ConvertTime(event['time']))
 
             # removes events from recents if it is older than the specified time_period (typically a week)
-
             active_cases = [item for item in active_cases if item['time'] > (event['time']-time_period)]
 
-            if len(active_cases)!=0:
-                case_numbers.append((len(active_cases), event['time']))
-                #file.write(str(len(active_cases))+"," + str(event["time"]) + "\n")
+            #if len(active_cases)!=0:
+                #case_numbers.append((len(active_cases), event['time']))
+                #file.write(str(len(active_cases))+"," + str(event["time"]) + "," + str(SWLpercent) +"\n")
 
-            print("Anti-vax:" + str(sum(i == 0 for i in opinions)) + ", pro-vax: " + str(sum(i == 1 for i in opinions)), end='\r')
+            if event['type']=='vax':
+                file.write(str(vax_count)+"," + str(refuse_count)+"," + str(event["time"]) +"\n")
+
+            # displays a changing readout of the voter model balance
+            print("Anti-vax:" + str(sum(i == 0 for i in opinions)) + ", pro-vax: " + str(sum(i == 1 for i in opinions)) + ". Run no. " + str(j), end='\r')
 
         infected = []
         for x in range(len(tree)):
@@ -215,6 +237,6 @@ def main():
         print("Last infection occurred at "+str(ConvertTime(lastinfection))+"\n")
     
 
-    #file.close()
+    file.close()
 
 main()
