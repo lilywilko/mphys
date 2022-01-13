@@ -64,6 +64,19 @@ def GetSWLData(filename, percent):
     return cases, times
 
 
+def GetSeverityData(filename, start, stop):
+    sevs = []
+
+    with open(filename) as file:
+        csv_reader = csv.reader(file, delimiter=',')
+        next(csv_reader, None)
+        for row in csv_reader:
+            if float(row[1])>=start and float(row[1])<stop:
+                sevs.append(float(row[0]))
+
+    return sevs
+
+
 def main():
     plt.style.use('seaborn-colorblind')
     # ---------------- PLOTTING FOR VARIABLE VACCINATION RATES ----------------
@@ -100,6 +113,29 @@ def main():
     #ActiveCases(cases9, times9, None)
     #ActiveCases(cases10, times10, None)
 
+    # ----------- PLOTTING FOR ACTIVE CASES OVER TIME (DYNAMIC BETA) ----------
+
+    #cases1, times1 = GetACData('active_cases_dynamic_beta_100_day_vax.csv')
+    #cases2, times2 = GetACData('active_cases_dynamic_beta_50_day_vax.csv')
+    #cases3, times3 = GetACData('active_cases_dynamic_beta.csv')
+    #cases4, times4 = GetACData('active_cases_dynamic_beta_30_day_vax.csv')
+
+    #with open('active_cases_dynamic_beta_100_day_vax.csv') as file:
+        #csv_reader = csv.reader(file, delimiter=',')
+        #next(csv_reader, None)
+        #for row in csv_reader:
+            #avg_neighbours = float(row[2])
+            #beta = float(row[3])
+
+    #ActiveCases(cases3, times3, '330 day vax')
+    #ActiveCases(cases1, times1, '100 day vax')
+    #ActiveCases(cases2, times2, '50 day vax')
+    #ActiveCases(cases4, times4, '30 day vax')
+    
+    
+    
+    #plt.title("Number of active cases vs. time for adjusted beta of " + str(beta) + " (avg neighbours = " + str(avg_neighbours) + ")")
+
     # -------------------- PLOTTING ACTIVE CASES VS. BETA -------------------
     #cases1, times1 = GetACData('beta_0.8_cases_data.csv')
     #cases2, times2 = GetACData('beta_0.5_cases_data.csv')
@@ -132,25 +168,36 @@ def main():
 
     # --------------- PLOTTING VACCINATION UPTAKE VS REFUSAL ---------------
 
-    uptakes = []
-    refusals = []
-    times = []
+    #uptakes = []
+    #refusals = []
+    #times = []
 
-    with open('vaccinations_vs_refusals.csv') as file:
-        csv_reader = csv.reader(file, delimiter=',')
-        next(csv_reader, None)
-        for row in csv_reader:
-            uptakes.append(int(row[0]))
-            refusals.append(int(row[1]))
-            times.append(int(row[2]))
+    #with open('vaccinations_vs_refusals.csv') as file:
+        #csv_reader = csv.reader(file, delimiter=',')
+        #next(csv_reader, None)
+        #for row in csv_reader:
+            #uptakes.append(int(row[0]))
+            #refusals.append(int(row[1]))
+            #times.append(int(row[2]))
 
-    totals = np.asarray(uptakes) + np.asarray(refusals)
+    #totals = np.asarray(uptakes) + np.asarray(refusals)
 
-    times = np.array(times)
-    times = times/(60*60*24)   # converts time to days for readability
+    #times = np.array(times)
+    #times = times/(60*60*24)   # converts time to days for readability
 
-    plt.plot(times, totals)
-    plt.plot(times, refusals)
+    #plt.plot(times, totals)
+    #plt.plot(times, refusals)
+
+
+    # --------------- PLOTTING VACCINATION UPTAKE VS REFUSAL ---------------
+
+    sevs1 = GetSeverityData('test.csv', 0, 1900)
+    sevs2 = GetSeverityData('test.csv', 1900, 8150)
+    sevs3 = GetSeverityData('test.csv', 8150, 10000)
+    
+    plt.hist(sevs1, bins=200, label="Kids", alpha=0.5)
+    plt.hist(sevs2, bins=200, label="Adults", alpha=0.5)
+    plt.hist(sevs3, bins=200, label="Elderly", alpha=0.5)
 
     plt.legend()
     plt.show()
