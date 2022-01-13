@@ -65,7 +65,7 @@ def AgeWaveVax(frac, N1, N2, N3, events):
         picked2[pick[0]] = True
 
         vax_time = NewEventTime(0, N3_mu, N3_sigma)   # picks a random second within the first year to vaccinate
-        vax_time = vax_time + (450*24*60*60)   # first vaccine in the uk was after 11 months - this is a correction to delay all vaccines
+        vax_time = vax_time + (400*24*60*60)   # first vaccine in the uk was after 11 months - this is a correction to delay all vaccines
 
         events.append(Event('vax', vax_time, pick[0]))   # creates a vax event and adds to the list
 

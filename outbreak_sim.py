@@ -104,6 +104,17 @@ def main():
     v_dispersion=10
     v_sigma, v_mu = LogNormal(v_mode, v_dispersion)
 
+
+    # case severity is drawn from an age-based distribution defined below...
+    R1_sigma = 0.7
+    R1_mu = 0
+
+    R2_sigma = 0.35
+    R2_mu = 0
+
+    R3_sigma = 0.2
+    R3_mu = 0
+
     ################################## SIMULATE OUTBREAK ##################################
 
     print("\n-------------- NODE NUMBERS -------------")
@@ -122,15 +133,11 @@ def main():
     beta=1.5/np.mean(np.asarray(neighbour_nos))   # softcodes to force beta to be 1.5 using the randomly generated neighbours (beta * avg. neighbours = R0 = 1.5)
 
     filename = 'test.csv'
-    file = open(filename,'a')
-    
-    # only write header if the file is new (otherwise, just append new data)
-    if os.stat(filename).st_size == 0:
-        file.write("Vaccinations, Refusals, Time (s) \n")
+    file = open(filename,'w')
 
     #vax_frac = 0.5   # (i*10)% of the total nodes will be vaccinated at random (FOR RANDOMVAX)
 
-    X = 5
+    X = 1
     # run X simulations to collect outbreak sizes 
     for j in range(X):
 
@@ -168,7 +175,24 @@ def main():
                 if not immune[event['secondary']]:
                     print("\U0001F534" + str(event['primary'])+' infected '+str(event['secondary'])+' at '+ConvertTime(event['time']))   # print the event
                     tree.append((event['primary'],event['secondary']))   # add event to the tree
-                    case_severity = random.uniform(0,1)
+
+                    case_severity=2   # trick to ensure that chosen case severity is a maximum of 1...
+                    while case_severity>1:
+                        # if infected node is a child...
+                        if event['secondary']<N1:
+                            case_severity = np.random.lognormal(R1_mu,R1_sigma)
+                            case_severity = case_severity/8
+
+                        # if infected node is an adult...
+                        elif event['secondary']<N1+N2:
+                            case_severity = np.random.lognormal(R2_mu,R2_sigma)
+                            case_severity = case_severity/3
+
+                        # if infected node is elderly...
+                        else:
+                            case_severity = np.random.lognormal(R3_mu,R3_sigma)
+                            case_severity = case_severity/2
+                    
                     if case_severity>severity[event['secondary']]:
                         severity[event['secondary']]= case_severity   # gives a random severity to the case of disease
 
@@ -223,13 +247,13 @@ def main():
 
             #if len(active_cases)!=0:
                 #case_numbers.append((len(active_cases), event['time']))
-                #file.write(str(len(active_cases))+"," + str(event["time"]) + "," + str(SWLpercent) +"\n")
+                #file.write(str(len(active_cases))+"," + str(event['time'])+"," + str(np.mean(np.asarray(neighbour_nos))) + "," + str(beta) +"\n")
 
-            if event['type']=='vax':
-                file.write(str(vax_count)+"," + str(refuse_count)+"," + str(event["time"]) +"\n")
+            #if event['type']=='vax':
+                #file.write(str(vax_count)+"," + str(refuse_count)+"," + str(event["time"]) +"\n")
 
             # displays a changing readout of the voter model balance
-            print("Anti-vax:" + str(sum(i == 0 for i in opinions)) + ", pro-vax: " + str(sum(i == 1 for i in opinions)) + ". Run no. " + str(j), end='\r')
+            print("Anti-vax:" + str(sum(i == 0 for i in opinions)) + ", pro-vax: " + str(sum(i == 1 for i in opinions)) + ". Run no. " + str(j+1) + " of " + str(X), end='\r')
 
         infected = []
         for x in range(len(tree)):
@@ -240,7 +264,6 @@ def main():
         print("Number of infections: "+str(len(tree)))
         print("Number of nodes infected: "+str(len(set(infected))))
         print("Last infection occurred at "+str(ConvertTime(lastinfection))+"\n")
-    
 
     file.close()
 
