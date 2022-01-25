@@ -43,7 +43,7 @@ def SmallWorld(neighbours, number):
 
 
 def LinkRings(nbrs1, nbrs2, n):
-    for i in range(int(n*len(nbrs1)):
+    for i in range(int(n*len(nbrs1))):
         node1 = random.choice(list(nbrs1.keys()))
         node2 = random.choice(list(nbrs2.keys()))
 
