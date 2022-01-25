@@ -123,29 +123,36 @@ def main():
 
 
     # creates separate disease and behaviour networks (currently identical)
-    nodes, edges, neighbours = nw.DiseaseNetwork(N1, N2, N3, link1to2, link2to3, link1to3, SWL1, SWL2, SWL3)
-    bnodes, bedges, bneighbours = nw.BehaviourNetwork(nodes, edges, neighbours)
+    nodes, edges, neighbours, bnodes, bedges, bneighbours = nw.MakeNetworks(N1, N2, N3)
 
+    # collects the amounts of neighbours that each node has
     neighbour_nos = []
     for i in range(len(neighbours)):
         neighbour_nos.append(len(neighbours[i]))
 
-    beta=1.5/np.mean(np.asarray(neighbour_nos))   # softcodes to force beta to be 1.5 using the randomly generated neighbours (beta * avg. neighbours = R0 = 1.5)
+    # forces beta to be 1.5 using the randomly generated neighbours (beta * avg. neighbours = R0 = 1.5)
+    beta=1.5/np.mean(np.asarray(neighbour_nos))
 
-    filename = 'test.csv'
+    filename = 'uptake_vs_antivaxxers.csv'
     file = open(filename,'w')
+
+    file.write("Vaccinations, Refusals, Pro-vaxxers, Anti-vaxxers, Time (s), Initial AV fraction \n")
 
     #vax_frac = 0.5   # (i*10)% of the total nodes will be vaccinated at random (FOR RANDOMVAX)
 
-    X = 1
+    X = 11
     # run X simulations to collect outbreak sizes 
     for j in range(X):
 
         # status arrays
         immune=np.zeros(totalN, dtype=bool)   # an array telling us the immunity of each node (for initial conditions we start with all nodes susceptible)
-        opinions = []   # an array keeping track of everyone's behaviour status
+        
+        av_frac = j/10   # varies the fraction of voters who are initialised to be anti-vax
+        opinions = np.ones(totalN, dtype=bool)   # an array keeping track of everyone's behaviour status
         for i in range(totalN):
-            opinions.append(random.randint(0, 1))   # randomly initialises a pro/anti-vax stance for each node
+            roll = random.uniform(0, 1)   # randomly initialises a pro/anti-vax stance for each node
+            if roll<av_frac:
+                opinions[i]=0
 
         severity=np.zeros(totalN)   # an array keeping track of everyone's most severe case of disease
 
@@ -156,7 +163,9 @@ def main():
         
         #events = vax.RandomVax(vax_frac, totalN, events)   # randomly chooses a given % of nodes to be vaccinated at a random time in the first year
         events = vax.AgeWaveVax(1, N1, N2, N3, events)
-        events = vm.GetOpinionEvents(N1, N2, N3, events)   # creates totalN*5 events for a random node to potentially change opinion at a random time
+
+        if j!=0 and j!=10:
+            events = vm.GetOpinionEvents(N1, N2, N3, events)   # creates totalN*5 events for a random node to potentially change opinion at a random time
 
         case_numbers = []
         active_cases = []
@@ -245,12 +254,16 @@ def main():
             # removes events from recents if it is older than the specified time_period (typically a week)
             active_cases = [item for item in active_cases if item['time'] > (event['time']-time_period)]
 
-            #if len(active_cases)!=0:
-                #case_numbers.append((len(active_cases), event['time']))
-                #file.write(str(len(active_cases))+"," + str(event['time'])+"," + str(np.mean(np.asarray(neighbour_nos))) + "," + str(beta) +"\n")
+            if len(active_cases)!=0:
+                case_numbers.append((len(active_cases), event['time']))
+                #file.write(str(len(active_cases))+"," + str(event['time'])+"," + str(av_frac) +"\n")
 
-            #if event['type']=='vax':
-                #file.write(str(vax_count)+"," + str(refuse_count)+"," + str(event["time"]) +"\n")
+            if event['type']=='vax':
+                file.write(str(vax_count)+"," + str(refuse_count)+"," + str(sum(i == 1 for i in opinions)) + "," + str(sum(i == 0 for i in opinions)) + "," + str(event["time"]) + "," + str(av_frac) +"\n")
+
+            # kills the simulation early once there are no more vaccinations to be performed
+            #if len(list(filter(lambda item: item['type'] == 'vax', events)))==0:
+                #events=[]
 
             # displays a changing readout of the voter model balance
             print("Anti-vax:" + str(sum(i == 0 for i in opinions)) + ", pro-vax: " + str(sum(i == 1 for i in opinions)) + ". Run no. " + str(j+1) + " of " + str(X), end='\r')
