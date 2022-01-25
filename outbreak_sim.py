@@ -133,21 +133,21 @@ def main():
     # forces beta to be 1.5 using the randomly generated neighbours (beta * avg. neighbours = R0 = 1.5)
     beta=1.5/np.mean(np.asarray(neighbour_nos))
 
-    filename = 'uptake_vs_antivaxxers.csv'
+    filename = 'active_cases_POLYMOD.csv'
     file = open(filename,'w')
 
-    file.write("Vaccinations, Refusals, Pro-vaxxers, Anti-vaxxers, Time (s), Initial AV fraction \n")
+    file.write("Active cases, Vaccinations, Refusals, Time (s), Initial AV fraction, Resusceptibility begins, Vaccinations begin \n")
 
     #vax_frac = 0.5   # (i*10)% of the total nodes will be vaccinated at random (FOR RANDOMVAX)
 
-    X = 11
+    X = 1
     # run X simulations to collect outbreak sizes 
     for j in range(X):
 
         # status arrays
         immune=np.zeros(totalN, dtype=bool)   # an array telling us the immunity of each node (for initial conditions we start with all nodes susceptible)
         
-        av_frac = j/10   # varies the fraction of voters who are initialised to be anti-vax
+        av_frac = 0.5   # varies the fraction of voters who are initialised to be anti-vax
         opinions = np.ones(totalN, dtype=bool)   # an array keeping track of everyone's behaviour status
         for i in range(totalN):
             roll = random.uniform(0, 1)   # randomly initialises a pro/anti-vax stance for each node
@@ -170,8 +170,15 @@ def main():
         case_numbers = []
         active_cases = []
 
+        # counts how many vaccinations and vaccine refusals have occurred
         vax_count = 0
         refuse_count = 0
+
+        # flags for when resusceptibility and vaccination kick in
+        resus_active = 0
+        resus_time = 0
+        vax_active = 0
+        vax_time = 0
 
         # start a loop in which we resolve the events in time order until no events remain
         while events:
@@ -235,6 +242,9 @@ def main():
                     refuse_count+=1
                     print("\U0001F535" + str(event['node']) + " refused the vaccine at " + ConvertTime(event['time']))
 
+                if vax_active==0:
+                    vax_active = 1
+                    vax_time = event['time']
 
                 end_time = NewEventTime(event['time'], v_mu, v_sigma)
                 events.append(Event('unvax', end_time, event['node'], None))   # creates 'unvax' event and adds to list
@@ -251,6 +261,10 @@ def main():
                 immune[event['node']]=False
                 print("\U0001F7E1" + str(event['node']) + " became re-susceptible after infection at " + ConvertTime(event['time']))
 
+                if resus_active==0:
+                    resus_active=1
+                    resus_time=event['time']
+
             # removes events from recents if it is older than the specified time_period (typically a week)
             active_cases = [item for item in active_cases if item['time'] > (event['time']-time_period)]
 
@@ -258,8 +272,7 @@ def main():
                 case_numbers.append((len(active_cases), event['time']))
                 #file.write(str(len(active_cases))+"," + str(event['time'])+"," + str(av_frac) +"\n")
 
-            if event['type']=='vax':
-                file.write(str(vax_count)+"," + str(refuse_count)+"," + str(sum(i == 1 for i in opinions)) + "," + str(sum(i == 0 for i in opinions)) + "," + str(event["time"]) + "," + str(av_frac) +"\n")
+            file.write(str(len(active_cases)) + "," + str(vax_count)+"," + str(refuse_count) + "," + str(event["time"]) + "," + str(av_frac) + "," + str(resus_time) + "," + str(vax_time) + "\n")
 
             # kills the simulation early once there are no more vaccinations to be performed
             #if len(list(filter(lambda item: item['type'] == 'vax', events)))==0:
