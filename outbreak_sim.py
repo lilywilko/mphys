@@ -66,7 +66,7 @@ def main():
     ############################ DEFINE SIMULATION PARAMETERS #############################
     
     # define number of nodes in each age group (proportions from 2019 https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/articles/overviewoftheukpopulation/january2021#the-uks-population-is-ageing)
-    totalN = 10000
+    totalN = 1000
     N1 = int(0.19*totalN)
     N2 = int(0.625*totalN)
     N3 = int(totalN-(N1+N2))
