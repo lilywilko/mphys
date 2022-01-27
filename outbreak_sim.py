@@ -74,19 +74,8 @@ def main():
     time_period = (7*24*60*60)   # defines the amount of time to count 'recent' cases (for plotting). default is 1 week
 
     #vax_type = 'random'   # can be 'random', 'agebased', or 'sequential'
-    
-    # define how many links are made between rings (arbitrary numbers for now)
-    link1to2 = int(N1*1.75)
-    link2to3 = int(N2*0.85)
-    link1to3 = int(N3*0.8)
 
     SWLpercent = 0.5
-
-    SWL1 = int(SWLpercent*N1)
-    SWL2 = int(SWLpercent*N1)
-    SWL3 = int(SWLpercent*N1)
-
-    #beta=0.5   # the probability that an infected node infects a susceptible neighbour
 
     # selects a determined amount of nodes to be seeds
     seed_no = 5
@@ -150,7 +139,7 @@ def main():
         # status arrays
         immune=np.zeros(totalN, dtype=bool)   # an array telling us the immunity of each node (for initial conditions we start with all nodes susceptible)
         
-        av_frac = 0.5   # varies the fraction of voters who are initialised to be anti-vax
+        av_frac = 0.2   # varies the fraction of voters who are initialised to be anti-vax
         opinions = np.ones(totalN, dtype=bool)   # an array keeping track of everyone's behaviour status
         for i in range(totalN):
             roll = random.uniform(0, 1)   # randomly initialises a pro/anti-vax stance for each node
