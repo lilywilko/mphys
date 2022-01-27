@@ -87,7 +87,10 @@ def main():
     SWL3 = int(SWLpercent*N1)
 
     #beta=0.5   # the probability that an infected node infects a susceptible neighbour
-    seed=N1+1   # start with a seed node (patient zero), the first "adult" node
+
+    # selects a determined amount of nodes to be seeds
+    seed_no = 5
+    patients_zero = random.sample(range(0, totalN), seed_no)
 
     # generation times (in days) are drawn from the log normal distribution defined below...
     g_mode=5 
@@ -159,7 +162,9 @@ def main():
         tree=[]   # output is a tree-like network
 
         events=[]   # create a list of events (this list will grow and shrink over time)
-        events.append(Event('trans', 0, None, seed))   # create the first transmission event (the seeding event) and add to events list
+
+        for i in range(seed_no):
+            events.append(Event('trans', 0, None, patients_zero[i]))   # create the first transmission event (the seeding event) and add to events list
         
         #events = vax.RandomVax(vax_frac, totalN, events)   # randomly chooses a given % of nodes to be vaccinated at a random time in the first year
         events = vax.AgeWaveVax(1, N1, N2, N3, events)
