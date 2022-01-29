@@ -156,7 +156,8 @@ def main():
             events.append(Event('trans', 0, None, patients_zero[i]))   # create the first transmission event (the seeding event) and add to events list
         
         #events = vax.RandomVax(vax_frac, totalN, events)   # randomly chooses a given % of nodes to be vaccinated at a random time in the first year
-        events = vax.AgeWaveVax(1, N1, N2, N3, events)
+        #events = vax.AgeWaveVax(1, N1, N2, N3, events)
+        events = vax.LogDistVax(1, totalN, events)
 
         if j!=0 and j!=10:
             events = vm.GetOpinionEvents(N1, N2, N3, events)   # creates totalN*5 events for a random node to potentially change opinion at a random time
