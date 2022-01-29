@@ -107,11 +107,9 @@ def LogDistVax(frac, N, events):
         pick = random.choice(list(enumerate(picked[picked==False])))   # pick a random node
         picked[pick[0]] = True   # mark the node as chosen
 
-        # picks a vaccination time between 3-13 months
-        vax_time = 350*24*60*60
-        while vax_time>300*24*60*60:
-            vax_time = NewEventTime(0, N_mu, N_sigma)   # picks a random second to offer vaccination
-        vax_time = vax_time + (90*24*60*60)   # delay vaccination to start at 3 months (90 days)
+        # picks a vaccination time after 3 months
+        vax_time = NewEventTime(0, N_mu, N_sigma)   # picks a random second to offer vaccination
+        vax_time = vax_time + (60*24*60*60)   # delay vaccination to start at 3 months (90 days)
 
         events.append(Event('vax', vax_time, pick[0]))   # creates a vax event and adds to the list
 
