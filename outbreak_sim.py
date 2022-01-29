@@ -154,6 +154,8 @@ def main():
 
         for i in range(seed_no):
             events.append(Event('trans', 0, None, patients_zero[i]))   # create the first transmission event (the seeding event) and add to events list
+
+        events.append(Event('kill', 365*24*60*60, None, None))   # creates an event to cut the simulation short at one year
         
         #events = vax.RandomVax(vax_frac, totalN, events)   # randomly chooses a given % of nodes to be vaccinated at a random time in the first year
         #events = vax.AgeWaveVax(1, N1, N2, N3, events)
@@ -260,6 +262,10 @@ def main():
                     resus_active=1
                     resus_time=event['time']
 
+            # when the 'kill' event is reached, delete all future events and finish the simulation
+            elif event['type']=='kill':
+                events=[]
+
             # removes events from recents if it is older than the specified time_period (typically a week)
             active_cases = [item for item in active_cases if item['time'] > (event['time']-time_period)]
 
@@ -280,6 +286,7 @@ def main():
         for x in range(len(tree)):
             infected.append(tree[x][1])
 
+        print(" ")
         print("--- OUTBREAK STATS ---")
 
         print("Number of infections: "+str(len(tree)))
