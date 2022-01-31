@@ -115,7 +115,7 @@ def main():
 
 
     # creates separate disease and behaviour networks (currently identical)
-    nodes, edges, neighbours, bnodes, bedges, bneighbours = nw.MakeNetworks(N1, N2, N3)
+    nodes, neighbours, bneighbours = nw.MakeNetworks(N1, N2, N3)
 
     # collects the amounts of neighbours that each node has
     neighbour_nos = []
@@ -207,7 +207,7 @@ def main():
                             case_severity = case_severity/2
                     
                     if case_severity>severity[event['secondary']]:
-                        severity[event['secondary']]= case_severity   # gives a random severity to the case of disease
+                        severity[event['secondary']]= case_severity   # updates "most severe case" if necessary
 
                     active_cases.append(event)
 
@@ -247,7 +247,7 @@ def main():
                 events.append(Event('unvax', end_time, event['node'], None))   # creates 'unvax' event and adds to list
 
             elif event['type']=='opinion':
-                neighbourpick = random.choice(neighbours[event['node']])
+                neighbourpick = random.choice(bneighbours[event['node']])
                 opinions[event['node']] = opinions[neighbourpick]
 
             elif event['type']=='unvax':
