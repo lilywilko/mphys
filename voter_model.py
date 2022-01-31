@@ -19,7 +19,7 @@ def GetOpinionEvents(N1, N2, N3, events):
 
     for i in range(total*5):
         choice = np.random.randint(0,total)
-        time = np.random.randint(0,31536000*12)   # opinion changes can happen for the first twelve years
+        time = np.random.randint(0,365*24*60*60)   # opinion changes can happen for the first year
         events.append(Event('opinion', time, choice))   # creates an opinion event and adds to the list
 
     return events

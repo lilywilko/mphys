@@ -140,13 +140,14 @@ def main():
         immune=np.zeros(totalN, dtype=bool)   # an array telling us the immunity of each node (for initial conditions we start with all nodes susceptible)
         
         av_frac = 0.2   # varies the fraction of voters who are initialised to be anti-vax
-        opinions = np.ones(totalN, dtype=bool)   # an array keeping track of everyone's behaviour status
+        opinions = np.zeros(totalN, dtype=bool)   # an array keeping track of everyone's behaviour status
         for i in range(totalN):
-            roll = random.uniform(0, 1)   # randomly initialises a pro/anti-vax stance for each node
-            if roll<av_frac:
-                opinions[i]=0
+            roll = random.uniform(0.0, 1.0)   # randomly initialises a pro/anti-vax stance for each node
+            if roll>av_frac:
+                opinions[i]=1   # ZERO IS ANTI-VAX, ONE IS PRO-VAX
 
         severity=np.zeros(totalN)   # an array keeping track of everyone's most severe case of disease
+        case_nos=np.zeros(totalN)
 
         tree=[]   # output is a tree-like network
 
@@ -161,8 +162,7 @@ def main():
         #events = vax.AgeWaveVax(1, N1, N2, N3, events)
         events = vax.LogDistVax(1, totalN, events)
 
-        if j!=0 and j!=10:
-            events = vm.GetOpinionEvents(N1, N2, N3, events)   # creates totalN*5 events for a random node to potentially change opinion at a random time
+        events = vm.GetOpinionEvents(N1, N2, N3, events)   # creates totalN*5 events for a random node to potentially change opinion at a random time
 
         case_numbers = []
         active_cases = []
@@ -210,6 +210,7 @@ def main():
                         severity[event['secondary']]= case_severity   # updates "most severe case" if necessary
 
                     active_cases.append(event)
+                    case_nos[event['secondary']]+=1
 
                     # now we need to add more infections to the list...
                     primary=event['secondary']   # "move on" so that the secondary becomes the new primary
@@ -247,8 +248,29 @@ def main():
                 events.append(Event('unvax', end_time, event['node'], None))   # creates 'unvax' event and adds to list
 
             elif event['type']=='opinion':
-                neighbourpick = random.choice(bneighbours[event['node']])
-                opinions[event['node']] = opinions[neighbourpick]
+                # clause to avoid breaking on nodes with no neighbours
+                if len(bneighbours[event['node']])>0:
+                    neighbourpick = random.choice(bneighbours[event['node']])
+
+                    # if the potential opinion change is from pro-vax to anti-vax...
+                    if opinions[neighbourpick]==False and opinions[event['node']]==True:
+
+                        # checks if any neighbours had a "severe" case (above 0.8)
+                        checker=False
+                        for i in range(len(bneighbours[event['node']])):
+                            if severity[bneighbours[event['node']][i]]>0.8 and checker==False:
+                                checker=True
+
+                        if severity[event['node']]>=0.8 or checker==True:
+                            theroll = random.uniform(0.0, 1.0)
+                            if theroll>0.85:
+                                opinions[event['node']] = opinions[neighbourpick]
+
+                        else:
+                            opinions[event['node']] = opinions[neighbourpick]
+
+                    else:
+                            opinions[event['node']] = opinions[neighbourpick]
 
             elif event['type']=='unvax':
                 immune[event['node']]=False   # node is no longer immune
