@@ -248,11 +248,10 @@ def main():
                 events.append(Event('unvax', end_time, event['node'], None))   # creates 'unvax' event and adds to list
 
             elif event['type']=='opinion':
-                # clause to avoid breaking on nodes with no neighbours
-                if len(bneighbours[event['node']])>0:
-                    neighbourpick = random.choice(bneighbours[event['node']])
+                if len(bneighbours[event['node']])>0:   # clause to avoid breaking on nodes with no neighbours
+                    neighbourpick = random.choice(bneighbours[event['node']])   # chooses a random neighbour
 
-                    # if the potential opinion change is from pro-vax to anti-vax...
+                    # if the potential opinion change is from pro-vax to anti-vax, check extra conditions...
                     if opinions[neighbourpick]==False and opinions[event['node']]==True:
 
                         # checks if any neighbours had a "severe" case (above 0.8)
@@ -261,11 +260,13 @@ def main():
                             if severity[bneighbours[event['node']][i]]>0.8 and checker==False:
                                 checker=True
 
+                        # if the node or its neighbours have had a severe case, reduce switch probability from 100% to 15%
                         if severity[event['node']]>=0.8 or checker==True:
-                            theroll = random.uniform(0.0, 1.0)
-                            if theroll>0.85:
+                            roll = random.uniform(0.0, 1.0)
+                            if roll>0.85:
                                 opinions[event['node']] = opinions[neighbourpick]
 
+                        # if the node and its neighbours have not had severe case, switch opinion as usual
                         else:
                             opinions[event['node']] = opinions[neighbourpick]
 
