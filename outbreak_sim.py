@@ -81,31 +81,31 @@ def main():
     seed_no = 5
     patients_zero = random.sample(range(0, totalN), seed_no)
 
-    # generation times (in days) are drawn from the log normal distribution defined below...
+    # generation times (in days) are drawn from the lognormal distribution defined below...
     g_mode=5 
     g_dispersion=1.3
     g_sigma, g_mu = LogNormal(g_mode, g_dispersion)
 
-    # post-covid immunity times (in days) are drawn from the log normal distribution defined below...
+    # post-covid immunity times (in days) are drawn from the lognormal distribution defined below...
     c_mode=180 
     c_dispersion=10
     c_sigma, c_mu = LogNormal(c_mode, c_dispersion)
 
-    # vaccination effectiveness times (in days) are drawn from the log normal distribution defined below...
+    # vaccination effectiveness times (in days) are drawn from the lognormal distribution defined below...
     v_mode=180
     v_dispersion=10
     v_sigma, v_mu = LogNormal(v_mode, v_dispersion)
 
 
-    # case severity is drawn from an age-based distribution defined below...
-    R1_sigma = 0.7
-    R1_mu = 0
+    # case severity is drawn from an age-based lognormal distribution defined below...
+    R1_sigma = 0.6
+    R1_mu = 0.2
 
-    R2_sigma = 0.35
-    R2_mu = 0
+    R2_sigma = 0.6
+    R2_mu = 0.6
 
-    R3_sigma = 0.2
-    R3_mu = 0
+    R3_sigma = 0.5
+    R3_mu = 1.1
 
     ################################## SIMULATE OUTBREAK ##################################
 
@@ -122,7 +122,7 @@ def main():
     for i in range(len(neighbours)):
         neighbour_nos.append(len(neighbours[i]))
 
-    # forces beta to be 1.5 using the randomly generated neighbours (beta * avg. neighbours = R0 = 1.5)
+    # forces R0 to be 1.5 using the randomly generated neighbours (beta * avg. neighbours = R0 = 1.5)
     beta=1.5/np.mean(np.asarray(neighbour_nos))
 
     filename = 'active_cases_POLYMOD.csv'
@@ -194,17 +194,14 @@ def main():
                         # if infected node is a child...
                         if event['secondary']<N1:
                             case_severity = np.random.lognormal(R1_mu,R1_sigma)
-                            case_severity = case_severity/8
-
                         # if infected node is an adult...
                         elif event['secondary']<N1+N2:
                             case_severity = np.random.lognormal(R2_mu,R2_sigma)
-                            case_severity = case_severity/3
-
                         # if infected node is elderly...
                         else:
                             case_severity = np.random.lognormal(R3_mu,R3_sigma)
-                            case_severity = case_severity/2
+
+                        case_severity = case_severity/8   # scale factor for severities
                     
                     if case_severity>severity[event['secondary']]:
                         severity[event['secondary']]= case_severity   # updates "most severe case" if necessary
