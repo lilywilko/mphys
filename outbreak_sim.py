@@ -124,12 +124,6 @@ def main():
 
     # forces R0 to be 1.5 using the randomly generated neighbours (beta * avg. neighbours = R0 = 1.5)
     beta=1.5/np.mean(np.asarray(neighbour_nos))
-
-    filename = 'active_cases_POLYMOD.csv'
-    file = open(filename,'w')
-
-    file.write("Active cases, Vaccinations, Refusals, Time (s), Initial AV fraction, Resusceptibility begins, Vaccinations begin \n")
-
     #vax_frac = 0.5   # (i*10)% of the total nodes will be vaccinated at random (FOR RANDOMVAX)
 
     X = 1
@@ -160,9 +154,9 @@ def main():
         
         #events = vax.RandomVax(vax_frac, totalN, events)   # randomly chooses a given % of nodes to be vaccinated at a random time in the first year
         #events = vax.AgeWaveVax(1, N1, N2, N3, events)
-        events = vax.LogDistVax(1, totalN, events)
+        #events = vax.LogDistVax(1, totalN, events)
 
-        events = vm.GetOpinionEvents(N1, N2, N3, events)   # creates totalN*5 events for a random node to potentially change opinion at a random time
+        #events = vm.GetOpinionEvents(N1, N2, N3, events)   # creates totalN*5 events for a random node to potentially change opinion at a random time
 
         case_numbers = []
         active_cases = []
@@ -291,9 +285,6 @@ def main():
 
             if len(active_cases)!=0:
                 case_numbers.append((len(active_cases), event['time']))
-                #file.write(str(len(active_cases))+"," + str(event['time'])+"," + str(av_frac) +"\n")
-
-            file.write(str(len(active_cases)) + "," + str(vax_count)+"," + str(refuse_count) + "," + str(event["time"]) + "," + str(av_frac) + "," + str(resus_time) + "," + str(vax_time) + "\n")
 
             # kills the simulation early once there are no more vaccinations to be performed
             #if len(list(filter(lambda item: item['type'] == 'vax', events)))==0:
@@ -313,6 +304,10 @@ def main():
         print("Number of nodes infected: "+str(len(set(infected))))
         print("Last infection occurred at "+str(ConvertTime(lastinfection))+"\n")
 
+    filename = 'active_cases_POLYMOD.csv'
+    file = open(filename,'a')
+    for i in range(len(case_nos)):
+        file.write(str(case_numbers[i][0]) + "," + str(case_numbers[i][1])+",7\n")
     file.close()
 
 main()
