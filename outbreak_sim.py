@@ -233,9 +233,9 @@ def main():
                             refuse_count+=1   # counts the refusal
                             #print("\U0001F535" + str(event['node']) + " refused the vaccine at " + ConvertTime(event['time']))
 
-                            # offers the node vaccination again at some point in the next ~year
-                            new_vax_time = NewEventTime(event['time'], N_mu, N_sigma)
-                            events.append(Event('vax', new_vax_time, event['node'], None))
+                        # offers the node another vaccination in a year
+                        new_vax_time = event['time'] + (365*24*60*60)
+                        events.append(Event('vax', new_vax_time, event['node'], None))
 
                         # generates a time for post-vaccination immunity to wear off
                         end_time = NewEventTime(event['time'], v_mu, v_sigma)
@@ -248,10 +248,6 @@ def main():
                         immune[event['node']]=False   # node is no longer immune
                         active_vax[event['node']]=False   # vaccination is no longer "active" for this node
                         #print("\U0001F7E0" + str(event['node']) + " became re-susceptible after vaccination at " + ConvertTime(event['time']))
-
-                        # generates time for next offer of vaccination
-                        new_vax_time = NewEventTime(event['time'], N_mu, N_sigma)
-                        events.append(Event('vax', new_vax_time, event['node'], None))
 
                     elif event['type']=='resusceptible':
                         immune[event['node']]=False   # node is no longer immune
