@@ -43,19 +43,24 @@ def OpinionEvent(node, neighbours, opinions, severity):
 
         # if the potential opinion change is from pro-vax to anti-vax, check extra conditions...
         if opinions[neighbourpick]==False and opinions[node]==True:
-            checker=False
+            neighbourchecker=False
+            selfchecker=False
 
             # checks if any neighbours had a "severe" case (above 0.8)
             for i in range(len(neighbours)):
                 if severity[neighbours[i]]>0.8:
-                    checker=True
+                    neighbourchecker=True
             # checks if the node itself has had a "severe" case (above 0.8)
             if severity[node]>=0.8:
-                checker=True
+                selfchecker=True
 
-            # if the node or its neighbours have had a severe case, reduce change probability by 80%
-            if checker==True:
-                change_prob = change_prob - 0.8
+            # if neighbours have had a severe case, reduce change probability by 50%
+            if neighbourchecker==True:
+                change_prob = change_prob - 0.5
+
+            # if the node itself has had a severe case, reduce change probability by 50%
+            if selfchecker==True:
+                change_prob = change_prob - 0.5
 
         # adopts neighbour's behaviour with the change probability
         roll = np.random.uniform(0.0, 1.0)
