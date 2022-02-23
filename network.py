@@ -1,5 +1,4 @@
 import numpy as np
-import random
 import copy
 
 def CreateRing(start, N, number):
@@ -35,15 +34,15 @@ def SmallWorld(neighbours, number, elderly):
     # picks SWLs twice: first for physical neighbours, then behavioural neighbours
     for x in range(2):
         for i in range(int(len(neighbours)*number[x])):
-            pick1, pick2 = random.choices(keys, k=2)   # chooses two nodes at random
+            pick1, pick2 = np.random.choices(keys, k=2)   # chooses two nodes at random
 
             # if picking for physical network...
             if x==0:
                 while (pick2 in neighbours[pick1]):
-                    pick1, pick2 = random.choices(keys, k=2)   # keep choosing if they are already neighbours
+                    pick1, pick2 = np.random.choices(keys, k=2)   # keep choosing if they are already neighbours
             elif x==1:
                 while (pick2 in bneighbours[pick1]):
-                    pick1, pick2 = random.choices(keys, k=2)   # keep choosing if they are already behavioural neighbours
+                    pick1, pick2 = np.random.choices(keys, k=2)   # keep choosing if they are already behavioural neighbours
 
             # if picking for physical network...
             if x == 0:
@@ -53,7 +52,7 @@ def SmallWorld(neighbours, number, elderly):
 
                 # for the elderly special case, where there are no ring links but some contacts still need to be both physical and behavioural...
                 if elderly==True:
-                    if random.uniform(0.0,1.0)<0.5:   # make 50% of the physical links also be behavioural
+                    if np.random.uniform(0.0,1.0)<0.5:   # make 50% of the physical links also be behavioural
                         bneighbours[pick1].append(pick2)
                         bneighbours[pick2].append(pick1)
 
@@ -69,14 +68,14 @@ def SmallWorld(neighbours, number, elderly):
 def LinkRings(nbrs1, nbrs2, bnbrs1, bnbrs2, n, directional):
     # picking links for physical network...
     for i in range(int(n[0]*len(nbrs1))):
-        node1 = random.choice(list(nbrs1.keys()))
-        node2 = random.choice(list(nbrs2.keys()))
+        node1 = np.random.choice(list(nbrs1.keys()))
+        node2 = np.random.choice(list(nbrs2.keys()))
 
         # adds link to the list of neighbours
         nbrs1[node1].append(node2)
         nbrs2[node2].append(node1)
 
-        if random.uniform(0,1)<0.5:   # make 50% of the physical links also be behavioural
+        if np.random.uniform(0,1)<0.5:   # make 50% of the physical links also be behavioural
             if directional!=True:   # the first ring passed is always the younger, so if the links are directional then don't add this neighbour
                 bnbrs1[node1].append(node2)
             bnbrs2[node2].append(node1)
@@ -84,13 +83,13 @@ def LinkRings(nbrs1, nbrs2, bnbrs1, bnbrs2, n, directional):
 
     # picking links for the behavioural network...
     for i in range(int(n[1]*len(bnbrs1))):
-        node1 = random.choice(list(bnbrs1.keys()))
-        node2 = random.choice(list(bnbrs2.keys()))
+        node1 = np.random.choice(list(bnbrs1.keys()))
+        node2 = np.random.choice(list(bnbrs2.keys()))
 
         # if the link already in the physical network or the behavioural network, pick again
         while (node2 in nbrs1[node1]) or (node2 in bnbrs1[node1]):
-            node1 = random.choice(list(bnbrs1.keys()))
-            node2 = random.choice(list(bnbrs2.keys()))
+            node1 = np.random.choice(list(bnbrs1.keys()))
+            node2 = np.random.choice(list(bnbrs2.keys()))
             
         # adds link to the list of neighbours
         if directional!=True:   # the first ring passed is always the younger, so if the links are directional then don't add this neighbour

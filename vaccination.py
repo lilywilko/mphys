@@ -1,5 +1,4 @@
 import numpy as np
-import random
 
 
 def Event(type, time, node):
@@ -29,7 +28,7 @@ def RandomVax(fraction, totalN, events):
 
     # picking nodes to vaccinate....
     for x in range(vaxevents_no):
-        pick = random.choice(list(enumerate(picked[picked==False])))   # picks a random unvaccinated node
+        pick = np.random.choice(list(enumerate(picked[picked==False])))   # picks a random unvaccinated node
         picked[pick[0]] = True
         vax_time = np.random.randint(0,31536000)   # picks a random second within the first year to vaccinate
         events.append(Event('vax', vax_time, pick[0]))   # creates a vax event and adds to the list
@@ -52,7 +51,7 @@ def AgeWaveVax(frac, N1, N2, N3, events):
 
     # picking ring 3 (elderly) nodes to vaccinate first...
     for x in range(int(frac*N3)):
-        pick = random.choice(list(enumerate(picked3[picked3==False])))   # pick a random elderly node
+        pick = np.random.choice(list(enumerate(picked3[picked3==False])))   # pick a random elderly node
         picked3[pick[0]] = True   # mark the node as chosen
 
         picked3[pick[0]] = True
@@ -65,7 +64,7 @@ def AgeWaveVax(frac, N1, N2, N3, events):
     
     # picking ring 2 (adult) nodes to vaccinate next...
     for x in range(int(frac*N2)):
-        pick = random.choice(list(enumerate(picked2[picked2==False])))   # pick a random adult node
+        pick = np.random.choice(list(enumerate(picked2[picked2==False])))   # pick a random adult node
         picked2[pick[0]] = True   # mark the node as chosen
 
         vax_time = NewEventTime(0, N3_mu, N3_sigma)   # picks a random second within the first year to vaccinate
@@ -79,7 +78,7 @@ def AgeWaveVax(frac, N1, N2, N3, events):
 
     # picking ring 1 (child) nodes to vaccinate last...
     for x in range(int(frac*N1)):
-        pick = random.choice(list(enumerate(picked1[picked1==False])))   # pick a random youth node
+        pick = np.random.choice(list(enumerate(picked1[picked1==False])))   # pick a random youth node
         picked1[pick[0]] = True   # mark the node as chosen
 
         vax_time = NewEventTime(0, N3_mu, N3_sigma)   # picks a random second within the first year to vaccinate
@@ -104,7 +103,7 @@ def LogDistVax(frac, N, events):
 
     # picking nodes to offer vaccination...
     for x in range(int(frac*N)):
-        pick = random.choice(list(enumerate(picked[picked==False])))   # pick a random node
+        pick = np.random.choice(list(enumerate(picked[picked==False])))   # pick a random node
         picked[pick[0]] = True   # mark the node as chosen
 
         # picks a vaccination time after 3 months
