@@ -100,7 +100,7 @@ def LinkRings(nbrs1, nbrs2, bnbrs1, bnbrs2, n, directional):
     return nbrs1, nbrs2, bnbrs1, bnbrs2
 
 
-def MakeNetworks(N1, N2, N3):
+def MakeNetworks(N1, N2, N3, factor):
 
     ################################ MAKING BASIC NODE NETWORK ################################
 
@@ -112,17 +112,17 @@ def MakeNetworks(N1, N2, N3):
     ################################# ADDING SMALL WORLD LINKS ################################
 
     # adds small world links for disease and behavioural networks (boolean is for the elderly special case)
-    neighbours1, bneighbours1 = SmallWorld(neighbours1, [1.9, 0.9], False)   # this provides an additional 1.9 disease links, 0.9 behavioural links
-    neighbours2, bneighbours2 = SmallWorld(neighbours2, [1.5, 3.7], False)   # this provides an additional 1.5 disease links, 3.7 behavioural links
-    neighbours3, bneighbours3 = SmallWorld(neighbours3, [0.9, 0.9], True)   # this provides an additional 0.9 disease links, 0.9 behavioural links
+    neighbours1, bneighbours1 = SmallWorld(neighbours1, [(3.9*factor)-2, 0.9], False)   # this provides an additional 1.9 disease links, 0.9 behavioural links
+    neighbours2, bneighbours2 = SmallWorld(neighbours2, [(3.5*factor)-2, 3.7], False)   # this provides an additional 1.5 disease links, 3.7 behavioural links
+    neighbours3, bneighbours3 = SmallWorld(neighbours3, [(0.9*factor), 0.9], True)   # this provides an additional 0.9 disease links, 0.9 behavioural links
 
 
     ################################# ADDING INTER-RING LINKS ################################
 
     # link the three rings (number is the amount of links per node of the first set of nodes passed, e.g. R1 has 3.4*N1 physical links to R2)
-    neighbours1, neighbours2, bneighbours1, bneighbours2 = LinkRings(neighbours1, neighbours2, bneighbours1, bneighbours2, [3.4, 2.3], True)
-    neighbours2, neighbours3, bneighbours2, bneighbours3 = LinkRings(neighbours2, neighbours3, bneighbours2, bneighbours3, [0.3, 0.3], False)
-    neighbours1, neighbours3, bneighbours1, bneighbours3 = LinkRings(neighbours1, neighbours3, bneighbours1, bneighbours3, [0.1, 0.2], True)
+    neighbours1, neighbours2, bneighbours1, bneighbours2 = LinkRings(neighbours1, neighbours2, bneighbours1, bneighbours2, [3.4*factor, 2.3], True)
+    neighbours2, neighbours3, bneighbours2, bneighbours3 = LinkRings(neighbours2, neighbours3, bneighbours2, bneighbours3, [0.3*factor, 0.3], False)
+    neighbours1, neighbours3, bneighbours1, bneighbours3 = LinkRings(neighbours1, neighbours3, bneighbours1, bneighbours3, [0.1*factor, 0.2], True)
 
     ####################################### MERGING INFO #####################################
 
