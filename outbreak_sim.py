@@ -71,7 +71,7 @@ def main():
 
     # selects a determined amount of nodes to be seeds
     seed_no = 5
-    patients_zero = np.random.sample(range(0, totalN), seed_no)
+    patients_zero = np.random.choice(range(0, totalN), size=seed_no)
 
     # generation times (in days) are drawn from the lognormal distribution defined below...
     g_mode=5 
@@ -117,7 +117,7 @@ def main():
     nodes, neighbours, bneighbours = nw.MakeNetworks(N1, N2, N3, factor)
 
     # collects the amounts of neighbours that each node has and generates beta value based on R0 (beta * avg. neighbours = R0)
-    neighbour_nos = [len(i) for i in neighbours]
+    neighbour_nos = [len(neighbours[i]) for i in neighbours]
     R0=1.3
     beta=R0/np.mean(np.asarray(neighbour_nos))
 
@@ -126,7 +126,7 @@ def main():
         for m in range(1):
 
             outbreaklengths=[]
-            X = 100   # run X iterations of each parameter combination to collect data
+            X = 1   # run X iterations of each parameter combination to collect data
 
             for j in range(X):
 
@@ -162,6 +162,7 @@ def main():
 
                 active_cases = []   # a list that will store dictionaries of all cases that started in the last week
                 case_numbers = []   # a list that will store tuples of active case numbers and times
+                active_vax_count = []   # a list that will store tuples of active vaccination numbers and times
 
                 # counts how many vaccinations and vaccine refusals have occurred
                 vax_count = 0
@@ -265,6 +266,7 @@ def main():
                     # if there are still active cases, record the time and number of active cases for plotting
                     if len(active_cases)!=0:
                         case_numbers.append((len(active_cases), event['time']))
+                        active_vax_count.append((sum(active_vax), event['time']))
 
                     # kills the simulation early once there are no more transmissions to be performed
                     if len(list(filter(lambda item: item['type'] == 'trans', events)))==0:
@@ -281,12 +283,12 @@ def main():
                 
 
                 ################################ SAVING DATA ################################
-                filename = 'active_cases_vs_resus_vax.csv'
+                filename = 'cases_vax_cycle.csv'
                 file = open(filename,'a')
                 if os.stat(filename).st_size == 0:
-                    file.write("Infection resus mode (days), Infection resus disp. (days), Vax resus mode (days), Vax resus disp. (days), Active cases, Time (s), Active vaccinations \n")
+                    file.write("Active cases, Active vaccinations, Pro-vax population, Anti-vax population, Time (s) \n")
                 for i in range(len(case_numbers)):
-                    file.write(str(c_mode) + "," + str(c_dispersion)+"," + str(v_mode) + "," + str(v_dispersion) + "," + str(case_numbers[i][0]) + "," + str(case_numbers[i][1]) + "," + str(case_numbers[i][2]) + "\n")
+                    file.write(str(case_numbers[i][0]) + "," + str(active_vax_count[i][0])+"," + str(sum(i == 1 for i in opinions)) + "," + str(sum(i == 0 for i in opinions)) + "," + str(case_numbers[i][1]) + "\n")
                 file.close()
 
                 outbreaklengths.append(lastinfection)

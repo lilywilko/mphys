@@ -34,15 +34,15 @@ def SmallWorld(neighbours, number, elderly):
     # picks SWLs twice: first for physical neighbours, then behavioural neighbours
     for x in range(2):
         for i in range(int(len(neighbours)*number[x])):
-            pick1, pick2 = np.random.choices(keys, k=2)   # chooses two nodes at random
+            pick1, pick2 = np.random.choice(keys, size=2)   # chooses two nodes at random
 
             # if picking for physical network...
             if x==0:
                 while (pick2 in neighbours[pick1]):
-                    pick1, pick2 = np.random.choices(keys, k=2)   # keep choosing if they are already neighbours
+                    pick1, pick2 = np.random.choice(keys, size=2)   # keep choosing if they are already neighbours
             elif x==1:
                 while (pick2 in bneighbours[pick1]):
-                    pick1, pick2 = np.random.choices(keys, k=2)   # keep choosing if they are already behavioural neighbours
+                    pick1, pick2 = np.random.choice(keys, size=2)   # keep choosing if they are already behavioural neighbours
 
             # if picking for physical network...
             if x == 0:

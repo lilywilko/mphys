@@ -37,7 +37,7 @@ def InitBehaviour(N, av_frac):
 
 def OpinionEvent(node, neighbours, opinions, severity):
     if len(neighbours)>0:   # clause to avoid breaking on nodes with no neighbours
-        neighbourpick = np.random.choice(neighbours[node])   # chooses a random neighbour
+        neighbourpick = np.random.choice(neighbours)   # chooses a random neighbour
 
         change_prob = 1.0   # probability of taking neighbours opinion is 1 by default
 
