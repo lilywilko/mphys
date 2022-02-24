@@ -100,11 +100,6 @@ def main():
     R3_mu = 1.1
 
 
-    # time that node is offered another vaccination is drawn from distribution below...
-    N_sigma = 1
-    N_mu = 15
-
-
     ################################## SIMULATE NETWORK ##################################
 
     print("\n-------------- NODE NUMBERS -------------")
