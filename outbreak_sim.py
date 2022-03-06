@@ -79,12 +79,12 @@ def main():
     g_sigma, g_mu = LogNormal(g_mode, g_dispersion)
 
     # post-covid immunity times (in days) are drawn from the lognormal distribution defined below...
-    c_mode=180
+    c_mode=20
     c_dispersion=c_mode/12
     c_sigma, c_mu = LogNormal(c_mode, c_dispersion)
 
     # vaccination effectiveness times (in days) are drawn from the lognormal distribution defined below...
-    v_mode=180
+    v_mode=20
     v_dispersion=v_mode/12
     v_sigma, v_mu = LogNormal(v_mode, v_dispersion)
 
@@ -99,6 +99,7 @@ def main():
     R3_sigma = 0.5
     R3_mu = 1.1
 
+    av_frac = 0.25   # the fraction of voters who are initialised to be anti-vax
 
     ################################## SIMULATE NETWORK ##################################
 
@@ -115,13 +116,15 @@ def main():
     neighbour_nos = [len(neighbours[i]) for i in neighbours]
     R0=1.3
     beta=R0/np.mean(np.asarray(neighbour_nos))
+    
 
     # nested loops to allow parameters to be changed (for data collection)
     for k in range(1):
-        for m in range(1):
+        for m in range(52):
 
-            outbreaklengths=[]
-            X = 1   # run X iterations of each parameter combination to collect data
+            outbreaksizes=[]
+            opiniontime = (m+1)*7*24*60*60   # iterates through opinion event timescales week-by-week
+            X = 5   # run X iterations of each parameter combination to collect data
 
             for j in range(X):
 
@@ -130,7 +133,6 @@ def main():
                 immune=np.zeros(totalN, dtype=bool)   # an array telling us the immunity of each node (for initial conditions we start with all nodes susceptible)
                 active_vax=np.zeros(totalN, dtype=bool)   # an array telling us whether vaccination is active on each node
 
-                av_frac = 0.25   # the fraction of voters who are initialised to be anti-vax
                 opinions = vm.InitBehaviour(totalN, av_frac)   # randomly initialises opinions (zero is anti-vax, 1 is pro-vax)
 
                 severity=np.zeros(totalN)   # an array keeping track of everyone's most severe case of disease
@@ -142,22 +144,24 @@ def main():
 
                 tree=[]   # output is a tree-like network
                 events=[]   # create a list of events (this list will grow and shrink over time)
+                eventslog=[]   # creates a log of all events (this list will only grow)
 
                 # creates seeding events (transmissions at time t=0) and adds to events list
                 for i in range(seed_no):
                     events.append(Event('trans', 0, None, patients_zero[i]))
 
-                events.append(Event('kill', 2.5*365*24*60*60, None, None))   # creates an event to cut the simulation short at 2.5 years (optional)
+                events.append(Event('kill', 5*365*24*60*60, None, None))   # creates an event to cut the simulation short at 5 years (optional)
                 
                 #events = vax.RandomVax(vax_frac, totalN, events)   # chooses a given % of nodes to be vaccinated at a random time in the first year
                 #events = vax.AgeWaveVax(1, N1, N2, N3, events)   # chooses nodes to be vaccinated in age waves with lognormal time dists (similar to UK COVID vax rollout)
                 events = vax.LogDistVax(1, totalN, events)   # chooses random nodes to be vaccinated with lognormal time dists (similar to AgeWaveVax but without waves)
 
-                events = vm.GetOpinionEvents(N1, N2, N3, events)   # creates totalN*5 events for a random node to potentially change opinion at a random time
+                events = vm.GetOpinionEvents(N1, N2, N3, events, opiniontime)   # fetches each node's initial opinion event (at a random time between t=0 and t=opiniontime)
 
                 active_cases = []   # a list that will store dictionaries of all cases that started in the last week
                 case_numbers = []   # a list that will store tuples of active case numbers and times
                 active_vax_count = []   # a list that will store tuples of active vaccination numbers and times
+                immunity_count = []   # a list that will store tuples of total immune nodes and times
 
                 # counts how many vaccinations and vaccine refusals have occurred
                 vax_count = 0
@@ -170,7 +174,10 @@ def main():
                 while events:
                     event=min(events,key=lambda x: x['time'])   # fetch earliest infection event on the list
                     events.remove(event)   # remove the chosen infection from the list
-                    print("Time: " + str(round(event['time']/(365*24*60*60), 2)) + " years, active cases: " + str(len(active_cases)) + "      ", end='\r')   # prints the current working time in years
+
+                    print("Time: " + str(round(event['time']/(365*24*60*60), 2)) + " years, opinion event timescale: " + str(opiniontime/(24*60*60*7)) + " weeks, iteration " + str(j+1) + "/" + str(X) + "         ", end='\r')   # prints the current working time in years
+
+                    eventslog.append(event)   # permanently stores event in log
                     
                     # if the selected event is a transmission...
                     if event['type']=='trans':
@@ -238,7 +245,11 @@ def main():
                         events.append(Event('unvax', end_time, event['node'], None))   # creates 'unvax' event and adds to list
 
                     elif event['type']=='opinion':
-                        opinions[event['node']] = vm.OpinionEvent(event['node'], bneighbours[event['node']], opinions, severity)   # performs opinion inheritance
+                        opinions[event['node']], changeflag = vm.OpinionEvent(event['node'], bneighbours[event['node']], opinions, severity)   # performs opinion inheritance
+                        if changeflag == True:
+                            eventslog.append(Event('op_change', event['time'], event['node'], None))   # records the opinion change in the events log
+
+                        events.append(Event('opinion', event['time']+opiniontime, event['node'], None))   # creates the next opinion event for the node
 
                     elif event['type']=='unvax':
                         immune[event['node']]=False   # node is no longer immune
@@ -262,6 +273,7 @@ def main():
                     if len(active_cases)!=0:
                         case_numbers.append((len(active_cases), event['time']))
                         active_vax_count.append((sum(active_vax), event['time']))
+                        immunity_count.append((sum(immune), event['time']))
 
                     # kills the simulation early once there are no more transmissions to be performed
                     if len(list(filter(lambda item: item['type'] == 'trans', events)))==0:
@@ -275,25 +287,40 @@ def main():
                 for x in range(len(tree)):
                     infected.append(tree[x][1])
 
-                
+
+                ####################### PROCESSING OPINION CHANGE DATA ######################
+
+                all_op_changes = filter(lambda item: item['type'] == 'op_change', eventslog)
+                change_timescales = []
+
+                for i in range(totalN):
+                    change_list = list(filter(lambda item: item['node'] == i, all_op_changes))
+                    if len(change_list) != 0 and len(change_list) != 1:
+                        for k in range(len(change_list)-1):
+                            change_timescales.append(change_list[k+1]['time']-change_list[k]['time'])
+
+                if len(change_timescales)>0:
+                    mean_timescale = round(np.mean(change_timescales))
+                else:
+                    mean_timescale = None
 
                 ################################ SAVING DATA ################################
-                filename = 'cases_vax_cycle.csv'
+                filename = 'opinion_timescales_vs_outbreak_size.csv'
                 file = open(filename,'a')
                 if os.stat(filename).st_size == 0:
-                    file.write("Active cases, Active vaccinations, Pro-vax population, Anti-vax population, Time (s) \n")
-                for i in range(len(case_numbers)):
-                    file.write(str(case_numbers[i][0]) + "," + str(active_vax_count[i][0])+"," + str(sum(i == 1 for i in opinions)) + "," + str(sum(i == 0 for i in opinions)) + "," + str(case_numbers[i][1]) + "\n")
+                    file.write("Outbreak size, Delta t between events, Average time between opinion changes, Iteration \n")
+                for i in range(1):
+                    file.write(str(len(list(filter(lambda item: item['type'] == 'trans', eventslog)))) + "," + str(opiniontime)+"," + str(mean_timescale) + "," + str(j) + "\n")
                 file.close()
 
-                outbreaklengths.append(lastinfection)
+                outbreaksizes.append(len(list(filter(lambda item: item['type'] == 'trans', eventslog))))
 
-            # filename = 'resusceptibility_plane.csv'
-            # file = open(filename,'a')
-            # if os.stat(filename).st_size == 0:
-            #     file.write("Infection resus mode (days), Infection resus disp. (days), Vax resus mode (days), Vax resus disp. (days), Outbreak length (s) \n")
-            # for i in range(len(outbreaklengths)):
-            #     file.write(str(c_mode) + "," + str(c_dispersion)+"," + str(v_mode) + "," + str(v_dispersion) + "," + str(outbreaklengths[i]) + "\n")
-            # file.close()
+            #filename = 'outbreak_sizes_vs_AV.csv'
+            #file = open(filename,'a')
+            #if os.stat(filename).st_size == 0:
+                #file.write("Outbreak size, Anti-vax fraction, Iteration \n")
+            #for i in range(len(outbreaksizes)):
+                #file.write(str(outbreaksizes[i]) + "," + str(av_frac)+ "," + str(i) + "\n")
+            #file.close()
 
 main()

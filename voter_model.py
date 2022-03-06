@@ -1,4 +1,5 @@
 import numpy as np
+import random
 
 def Event(type, time, node):
     # each event is a small dictionary with keys...
@@ -14,13 +15,15 @@ def Event(type, time, node):
     return event
 
 
-def GetOpinionEvents(N1, N2, N3, events):
+def GetOpinionEvents(N1, N2, N3, events, timescale):
     total = N1+N2+N3
+    picked=np.zeros(total, dtype=bool)   # starts with an array of all "false" (unvaccinated)
 
-    for i in range(total*5):
-        choice = np.random.randint(0,total)
-        time = np.random.randint(0,365*24*60*60)   # opinion changes can happen for the first year
-        events.append(Event('opinion', time, choice))   # creates an opinion event and adds to the list
+    for i in range(total):
+        pick = random.choice(list(enumerate(picked[picked==False])))
+        time = np.random.randint(0,timescale)   # initial opinion change is randomly performed within the first time period
+        events.append(Event('opinion', time, pick[0]))   # creates an opinion event and adds to the list
+        picked[pick[0]]=True
 
     return events
 
@@ -36,6 +39,8 @@ def InitBehaviour(N, av_frac):
 
 
 def OpinionEvent(node, neighbours, opinions, severity):
+    changeflag = False   # introduces a flag to check whether node opinion flips
+
     if len(neighbours)>0:   # clause to avoid breaking on nodes with no neighbours
         neighbourpick = np.random.choice(neighbours)   # chooses a random neighbour
 
@@ -48,7 +53,7 @@ def OpinionEvent(node, neighbours, opinions, severity):
 
             # checks if any neighbours had a "severe" case (above 0.8)
             for i in range(len(neighbours)):
-                if severity[neighbours[i]]>0.8:
+                if severity[neighbours[i]]>=0.8:
                     neighbourchecker=True
             # checks if the node itself has had a "severe" case (above 0.8)
             if severity[node]>=0.8:
@@ -65,9 +70,11 @@ def OpinionEvent(node, neighbours, opinions, severity):
         # adopts neighbour's behaviour with the change probability
         roll = np.random.uniform(0.0, 1.0)
         if roll < change_prob:
+            if opinions[node] != opinions[neighbourpick]:
+                changeflag=True
             opinions[node] = opinions[neighbourpick]
 
-        return opinions[node]
+        return opinions[node], changeflag
 
     else:
-        return opinions[node]
+        return opinions[node], changeflag

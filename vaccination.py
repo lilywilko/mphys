@@ -100,16 +100,16 @@ def LogDistVax(frac, N, events):
 
     # creates an appropriate shape compared to data (used https://www.medcalc.org/manual/log-normal-distribution-functions.php to visualise)
     N_sigma = 1
-    N_mu = 4.5
+    N_mu = 5
 
     # picking nodes to offer vaccination...
     for x in range(int(frac*N)):
         pick = random.choice(list(enumerate(picked[picked==False])))   # pick a random node
         picked[pick[0]] = True   # mark the node as chosen
 
-        # picks a vaccination time after 3 months
+        # picks a vaccination time after 40 days
         vax_time = NewEventTime(0, N_mu, N_sigma)   # picks a random second to offer vaccination
-        #vax_time = vax_time + (60*24*60*60)   # delay vaccination to start at 2 months (60 days)
+        vax_time = vax_time + (40*24*60*60)   # delay vaccination to start at 40 days
 
         events.append(Event('vax', vax_time, pick[0]))   # creates a vax event and adds to the list
 
