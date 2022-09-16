@@ -35,6 +35,4 @@ At present, the code will not print many outputs to the terminal, and will save 
 The following parts of this repository still require work/updating to reach their final state:
 - Simulation terminal outputs to be integrated to main code from untracked "user friendly" version
 - User input capabilities to be integrated from "user friendly" version
-- Irrelevant data to be removed from repository
 - General cleaning of existing code and more in-depth commenting throughout
-- The final MPhys report and presentation to be added
