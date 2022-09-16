@@ -17,7 +17,7 @@ Hello! Thank you for taking an interest in my MPhys project. I created this code
 
 ## Purpose and outcomes of the simulation
 ### Purpose
-This simulation was designed to model the interaction between two key facets of disease propagation: transmissability and vaccination uptake.
+This simulation was designed to model the interaction between two key facets of disease propagation: transmissability and vaccination uptake. While the simulation is designed to be non-specific to any particular disease, it currently uses some hard-coded parameters (R0 number, post-infection immunity time, etc) which are approximately those of COVID-19. The intention is that this code can be altered for application to other infectious repiratory diseases, though I currently have no intention of adding alternative parameters myself.
 
 ### Outcomes
 During my Masters project investigations, the simulation produced the following main conclusions:
@@ -31,7 +31,7 @@ There are three main systems which interact to affect disease outcomes in the mo
 - A vaccination system: individuals within the simulation are **regularly offered vaccination**, which they may choose to take up or turn down. If vaccination is accepted, an individual will enter an immune state for an extended period (functionally identical to the *recovered* state in the SIRS model).
 - An opinion system: each individual **holds an opinion (either positive or negative) on vaccination**, and can influence their social contacts to adopt their same opinion. If the opinion is negative at the time a vaccination is offered to an individual, they will decline the vaccine. Otherwise, they will become vaccinated.
 
-Each individual in the simulation has a list of social contacts (to whom they can spread their opinion) and a list of physical contacts (to whom they can spread disease). These lists will contain overlap, as is likely in the real world.
+Each individual in the simulation has a list of social contacts (to whom they can spread their opinion) and a list of physical contacts (to whom they can spread disease). These lists will contain overlap, as is likely in the real world. The data for these contact numbers was taken from the POLYMOD dataset (please see the *Supplementary analysis* folder for more information).
 
 ## How to run the simulation
 The main code is contained in `outbreak_sim.py` - run this file to run the simulation. The files `vaccination.py`, `network.py` and `voter_model.py` contain auxillary functions which are used by the main simulation.
