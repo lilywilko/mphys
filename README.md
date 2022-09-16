@@ -27,8 +27,6 @@ The main code is contained in `outbreak_sim.py` - run this file to run the simul
 The simulation is designed for use from a console or terminal.
 
 ## Outputs
-There is a version of `outbreak_sim.py` which allows the user to select an output type to visualise the simulation, but this is not currently on GitHub as it was developed separately (I am yet to integrate these two versions).
-
 At present, the code will not print many outputs to the terminal, and will save data from the simulation to a .csv file at the end of the run. This was very useful for my data analysis, but I appreciate that it is not very useful for parsing the operations of the simulation! I will be working on cleaning up the code to provide more useful readouts and not write to .csv files.
 
 ## Work still to be done
