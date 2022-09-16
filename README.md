@@ -1,5 +1,15 @@
 # MPhys project: Modelling the role of anti-vaccination sentiment in disease outbreaks on a heterogeneous network
 
+- [MPhys project: Modelling the role of anti-vaccination sentiment in disease outbreaks on a heterogeneous network](#mphys-project-modelling-the-role-of-anti-vaccination-sentiment-in-disease-outbreaks-on-a-heterogeneous-network)
+  - [Background](#background)
+  - [Purpose and outcomes of the simulation](#purpose-and-outcomes-of-the-simulation)
+    - [Purpose](#purpose)
+    - [Outcomes](#outcomes)
+  - [How the model works](#how-the-model-works)
+  - [How to run the simulation](#how-to-run-the-simulation)
+  - [Outputs](#outputs)
+  - [Work still to be done](#work-still-to-be-done)
+
 ## Background
 Hello! Thank you for taking an interest in my MPhys project. I created this code during the 2021/2022 academic year, and used its outputs to write my final Masters dissertation. That said, this repository is absolutely not in its final state - there are many code snippets to tidy, graphs to add, and more. Since my graduation, this has become a side project for me, so please don't expect progress to be very fast!
 
