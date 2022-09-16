@@ -1,6 +1,8 @@
 # MPhys project: Modelling the role of anti-vaccination sentiment in disease outbreaks on a heterogeneous network
 
+## Contents
 - [MPhys project: Modelling the role of anti-vaccination sentiment in disease outbreaks on a heterogeneous network](#mphys-project-modelling-the-role-of-anti-vaccination-sentiment-in-disease-outbreaks-on-a-heterogeneous-network)
+  - [Contents](#contents)
   - [Background](#background)
   - [Purpose and outcomes of the simulation](#purpose-and-outcomes-of-the-simulation)
     - [Purpose](#purpose)
