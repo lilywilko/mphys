@@ -43,6 +43,4 @@ At present, the code will not print many outputs to the terminal, and will save 
 
 ## Work still to be done
 The following parts of this repository still require work/updating to reach their final state:
-- Implementing different output modes
 - General cleaning of existing code and more in-depth commenting throughout
-- Commenting out/removing parts of code used in testing
