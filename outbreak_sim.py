@@ -31,6 +31,19 @@ def Event(type, time, primary, secondary):
     return event
 
 
+# colours the text output of node numbers (for list mode outputs)
+def NodeColour(node, N1, N2, N3):
+    if node == '?':
+        return node
+    elif int(node)<N1:
+        return "\033[91m"+str(node)+"\033[0m"   # if the node is a child, colour the text red
+    elif int(node)<N2:
+        return "\033[93m"+str(node)+"\033[0m"   # if the node is an adult, colour the text yellow
+    else:
+        return "\033[92m"+str(node)+"\033[0m"   # if the node is elderly, colour the text green
+
+
+
 # function to return the next event time
 def NewEventTime(time, mu, sigma):
     wait=int((24*60*60)*np.random.lognormal(mu,sigma))   # how long will it be (in seconds) until the next event?
@@ -383,12 +396,13 @@ def main():
 
         # nested loops to allow parameters to be changed (for data collection)
         for k in range(1):
-            for m in range(52):
+            for m in range(1):
 
                 outbreaksizes=[]
-                opiniontime = (m+1)*7*24*60*60   # iterates through opinion event timescales week-by-week
-                X = 5   # run X iterations of each parameter combination to collect data
+                opiniontime = 7*24*60*60   # iterates through opinion event timescales week-by-week
+                #av_frac = m*0.1
 
+                X = 1   # run X iterations of each parameter combination to collect data
                 for j in range(X):
 
                     ################################ STATUS ARRAYS ################################
@@ -430,6 +444,11 @@ def main():
                     vax_count = 0
                     refuse_count = 0
 
+                    if output_type=='table':   # print the table header
+                        print("--------------------------------------------------------------------------")
+                        print("Time           Total cases     Active cases    Vaccinations     Refusals      ")
+                        print("--------------------------------------------------------------------------")
+
 
                     ################################## SIMULATE OUTBREAK ##################################
 
@@ -437,15 +456,19 @@ def main():
                     while events:
                         event=min(events,key=lambda x: x['time'])   # fetch earliest infection event on the list
                         events.remove(event)   # remove the chosen infection from the list
-
-                        print("Time: " + str(round(event['time']/(365*24*60*60), 2)) + " years, opinion event timescale: " + str(opiniontime/(24*60*60*7)) + " weeks, iteration " + str(j+1) + "/" + str(X) + "         ", end='\r')   # prints the current working time in years
-
                         eventslog.append(event)   # permanently stores event in log
+
+                        #print("Time: " + str(round(event['time']/(365*24*60*60), 2)) + " years, anti-vax frac: " + str(av_frac) + ", iteration " + str(j+1) + "/" + str(X) + "         ", end='\r')   # prints the current working time in years
                         
                         # if the selected event is a transmission...
                         if event['type']=='trans':
                             # ignoring cases in which the secondary is already immune (so no infection occurs)...
                             if not immune[event['secondary']]:
+                                if output_type == 'list':
+                                    print("\U0001F9A0 " + NodeColour(event['primary'], N1, N2, N3)+' infected '+ NodeColour(event['secondary'], N1, N2, N3)+' at '+ConvertTime(event['time'])[0])   # print the event
+                                elif output_type == 'table':
+                                    print('%-15s%-15s%-15s%-15s%-14s' % ("Day "+str(event['time'] // (24 * 3600)),"\U0001F9A0 "+str(len(list(filter(lambda item: item['type'] == 'trans', eventslog)))), "\U0001F4C8 " + str(len(active_cases)), "\U0001F489 "+str(vax_count), "\U0001F645 "+str(refuse_count)), flush=True)
+                                
                                 #print("\U0001F534" + str(event['primary'])+' infected '+str(event['secondary'])+' at '+ConvertTime(event['time']))   # print the event
                                 tree.append((event['primary'],event['secondary']))   # add event to the tree
 
@@ -494,10 +517,19 @@ def main():
                                 active_vax[event['node']]=True   # marks the node as actively vaccinated
                                 vax_count+=1   # counts the vaccination
                                 #print("\U0001F7E2" + str(event['node']) + " got vaccinated at " + ConvertTime(event['time']))
+                                if output_type == 'list':
+                                    print("\U0001F489 " + NodeColour(event['node'], N1, N2, N3) + " got vaccinated at " + ConvertTime(event['time'])[0])
+                                elif output_type == 'table':
+                                    print('%-15s%-15s%-15s%-15s%-14s' % ("Day "+str(ConvertTime(event['time'])[1]),"\U0001F9A0 "+str(len(list(filter(lambda item: item['type'] == 'trans', eventslog)))), "\U0001F4C8 " + str(len(active_cases)), "\U0001F489 "+str(vax_count), "\U0001F645 "+str(refuse_count)), flush=True)
+
 
                             else:
                                 refuse_count+=1   # counts the refusal
                                 #print("\U0001F535" + str(event['node']) + " refused the vaccine at " + ConvertTime(event['time']))
+                                if output_type == 'list':
+                                    print("\U0001F645 " + NodeColour(event['node'], N1, N2, N3) + " refused the vaccine at " + ConvertTime(event['time'])[0])
+                                elif output_type == 'table':
+                                    print('%-15s%-15s%-15s%-15s%-14s' % ("Day "+str(ConvertTime(event['time'])[1]),"\U0001F9A0 "+str(len(list(filter(lambda item: item['type'] == 'trans', eventslog)))), "\U0001F4C8 " + str(len(active_cases)), "\U0001F489 "+str(vax_count), "\U0001F645 "+str(refuse_count)), flush=True)
 
                             # offers the node another vaccination in a year
                             new_vax_time = event['time'] + (365*24*60*60)
@@ -528,6 +560,10 @@ def main():
                             if len(list(filter(lambda item: item['type'] == 'trans', events)))!=0:
                                 lastinfection=event['time']
                             events=[]
+                            if output_type != "testing":
+                                print("")
+                                print("This COVID-19 outbreak lasted longer than five years and likely became \033[1m\033[91mendemic\033[0m\033[0m, meaning that it stayed in the population in the long term (like the flu).")   # tell the user that the outbreak was endemic
+
 
                         # removes events from recents if it is older than the specified time_period (typically a week)
                         active_cases = [item for item in active_cases if item['time'] > (event['time']-time_period)]
@@ -541,6 +577,8 @@ def main():
                         # kills the simulation early once there are no more transmissions to be performed
                         if len(list(filter(lambda item: item['type'] == 'trans', events)))==0:
                             events=[]
+                            print("")
+                            print("This outbreak ended after " + str(ConvertTime(event['time'])[1]) + " days because \033[1m\033[92mnobody else was infected.\033[0m\033[0m")   # tells the user that the outbreak ended early
 
                         # displays a changing readout of the voter model balance
                         #print("Anti-vax:" + str(sum(i == 0 for i in opinions)) + ", pro-vax: " + str(sum(i == 1 for i in opinions)) + ". Run no. " + str(j+1) + " of " + str(X), end='\r')
@@ -553,37 +591,42 @@ def main():
 
                     ####################### PROCESSING OPINION CHANGE DATA ######################
 
-                    all_op_changes = filter(lambda item: item['type'] == 'op_change', eventslog)
-                    change_timescales = []
+                    #all_op_changes = filter(lambda item: item['type'] == 'op_change', eventslog)
+                    #change_timescales = []
 
-                    for i in range(totalN):
-                        change_list = list(filter(lambda item: item['node'] == i, all_op_changes))
-                        if len(change_list) != 0 and len(change_list) != 1:
-                            for k in range(len(change_list)-1):
-                                change_timescales.append(change_list[k+1]['time']-change_list[k]['time'])
+                    #for i in range(totalN):
+                        #change_list = list(filter(lambda item: item['node'] == i, all_op_changes))
+                        #if len(change_list) != 0 and len(change_list) != 1:
+                            #for k in range(len(change_list)-1):
+                                #change_timescales.append(change_list[k+1]['time']-change_list[k]['time'])
 
-                    if len(change_timescales)>0:
-                        mean_timescale = round(np.mean(change_timescales))
-                    else:
-                        mean_timescale = None
+                    #if len(change_timescales)>0:
+                        #mean_timescale = round(np.mean(change_timescales))
+                    #else:
+                        #mean_timescale = None
 
                     ################################ SAVING DATA ################################
-                    filename = 'opinion_timescales_vs_outbreak_size.csv'
-                    file = open(filename,'a')
-                    if os.stat(filename).st_size == 0:
-                        file.write("Outbreak size, Delta t between events, Average time between opinion changes, Iteration \n")
-                    for i in range(1):
-                        file.write(str(len(list(filter(lambda item: item['type'] == 'trans', eventslog)))) + "," + str(opiniontime)+"," + str(mean_timescale) + "," + str(j) + "\n")
-                    file.close()
+                    #filename = 'opinion_timescales_vs_outbreak_size.csv'
+                    #file = open(filename,'a')
+                    #if os.stat(filename).st_size == 0:
+                        #file.write("Outbreak size, Delta t between events, Average time between opinion changes, Iteration \n")
+                    #for i in range(1):
+                        #file.write(str(len(list(filter(lambda item: item['type'] == 'trans', eventslog)))) + "," + str(opiniontime)+"," + str(mean_timescale) + "," + str(j) + "\n")
+                    #file.close()
 
                     outbreaksizes.append(len(list(filter(lambda item: item['type'] == 'trans', eventslog))))
 
-                #filename = 'outbreak_sizes_vs_AV.csv'
-                #file = open(filename,'a')
-                #if os.stat(filename).st_size == 0:
-                    #file.write("Outbreak size, Anti-vax fraction, Iteration \n")
-                #for i in range(len(outbreaksizes)):
-                    #file.write(str(outbreaksizes[i]) + "," + str(av_frac)+ "," + str(i) + "\n")
-                #file.close()
+                ################################ SAVING DATA ################################
+                filename = 'outbreak_sizes_vs_AV.csv'
+                file = open(filename,'a')
+                if os.stat(filename).st_size == 0:
+                    file.write("Outbreak size, Anti-vax fraction, Iteration \n")
+                for i in range(len(outbreaksizes)):
+                    file.write(str(outbreaksizes[i]) + "," + str(av_frac)+ "," + str(i) + "\n")
+                file.close()
+
+        cont = input("The simulation has finished. Run it again? (Y/N)")
+        if cont in ("N", "n", "No", "no"):
+            continue_code = False
 
 main()
