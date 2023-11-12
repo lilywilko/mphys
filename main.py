@@ -8,9 +8,9 @@ import numpy as np
 import os
 import time
 
-import network as nw
-import vaccination as vax
-import voter_model as vm
+from modules import network as nw
+from modules import vaccination as vax
+from modules import voter_model as vm
 
 ################################### AUXILIARY FUNCTIONS ###################################
 
